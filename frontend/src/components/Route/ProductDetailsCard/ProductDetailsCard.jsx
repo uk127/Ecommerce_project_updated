@@ -133,6 +133,7 @@ const ProductDetailsCard = ({ setOpen, data }) => {
                                         <div className='flex  pt-3 '>
                                             <h4 className={`${styles.productDiscountPrice}`}>
                                                 ₹{data?.discountPrice}
+                                                {data?.unit && <span className="text-[12px] font-normal text-gray-500 ml-1">/ {data.unit}</span>}
                                             </h4>
                                             <h3 className={`${styles.price}`}>
                                                 {data?.originalPrice ? "₹" + data?.originalPrice : null}

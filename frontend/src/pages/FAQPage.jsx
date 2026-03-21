@@ -269,7 +269,7 @@ const Faq = () => {
                     {activeTab === 6 && (
                         <div className="mt-4">
                             <p className="text-base text-gray-500">
-                                Currently, we only offer shipping within the United States.
+                                Currently, we only offer shipping within the India.
                             </p>
                         </div>
                     )}

@@ -35,7 +35,7 @@ const Categories = () => {
                         categoriesData &&
                         categoriesData.map((i) => {
                             const handleSubmit = (i) => {
-                                navigate(`/products?category=${i.title}`);
+                                navigate(`/products?category=${(i.title).replace('&','%26')}`);
                             }
                             return (
                                 <div

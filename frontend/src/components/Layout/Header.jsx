@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "../../styles/styles";
 import { productData, categoriesData } from "../../static/data";
@@ -17,6 +17,9 @@ import { backend_url } from "../../server";
 import Cart from "../cart/Cart";
 import Wishlist from "../Wishlist/Wishlist";
 import { RxCross1 } from "react-icons/rx";
+import useActivity from "../../hooks/useActivity";
+import axios from "axios";
+import { server } from "../../server";
 
 const Header = ({ activeHeading }) => {
   const { isSeller } = useSelector((state) => state.seller);
@@ -24,14 +27,81 @@ const Header = ({ activeHeading }) => {
   const { wishlist } = useSelector((state) => state.wishlist);
   const { isAuthenticated, user } = useSelector((state) => state.user);
   const { allProducts } = useSelector((state) => state.products);
+  const { trackSearch, deleteSearchKeyword } = useActivity();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchData, setSearchData] = useState(null);
+  const [searchHistory, setSearchHistory] = useState([]);
+  const [showSearchHistory, setShowSearchHistory] = useState(false);
   const [active, setActive] = useState(false);
   const [dropDown, setDropDown] = useState(false);
   const [openCart, setOpenCart] = useState(false);
   const [openWishlist, setOpenWishlist] = useState(false);
   const [open, setOpen] = useState(false); // mobile menu
   const navigate = useNavigate();
+  const searchRef = useRef(null);
+
+  // Click outside to close search history
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSearchHistory(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Fetch search history on mount and when auth state changes
+  useEffect(() => {
+    const fetchSearchHistory = async () => {
+      if (isAuthenticated) {
+        try {
+          const { data } = await axios.get(`${server}/activity/me`, {
+            withCredentials: true,
+          });
+          if (data?.activity?.search_history) {
+            // Get unique keywords (most recent first) and limit to 10
+            const uniqueKeywords = [];
+            const seen = new Set();
+            const history = [...data.activity.search_history].reverse();
+            for (const item of history) {
+              if (!seen.has(item.keyword)) {
+                seen.add(item.keyword);
+                uniqueKeywords.push(item);
+              }
+            }
+            setSearchHistory(uniqueKeywords.slice(0, 10));
+          }
+        } catch (error) {
+          console.log("Failed to fetch search history:", error.message);
+        }
+      } else {
+        setSearchHistory([]);
+      }
+    };
+    fetchSearchHistory();
+  }, [isAuthenticated]);
+
+  // Handle deleting search history item
+  const handleDeleteSearchItem = async (keyword, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await deleteSearchKeyword(keyword);
+      setSearchHistory((prev) => prev.filter((item) => item.keyword !== keyword));
+    } catch (error) {
+      console.log("Failed to delete search item:", error.message);
+    }
+  };
+
+  // Handle clicking on a search history item
+  const handleHistoryItemClick = (keyword) => {
+    setSearchTerm(keyword);
+    navigate(`/search?q=${encodeURIComponent(keyword)}`);
+    setShowSearchHistory(false);
+  };
 
   // Handle search change
   const handleSearchChange = (e) => {
@@ -56,6 +126,8 @@ const Header = ({ activeHeading }) => {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchTerm.trim()) {
+      // Track search for recommendation system (only for authenticated users)
+      trackSearch(searchTerm.trim());
       navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
       setSearchTerm("");
       setSearchData(null);
@@ -84,13 +156,14 @@ const Header = ({ activeHeading }) => {
             </Link>
           </div>
           {/*Search box  */}
-          <div className="w-[50%] relative">
+          <div className="w-[50%] relative" ref={searchRef}>
             <input
               type="text"
               placeholder="Search for product..."
               value={searchTerm}
               onChange={handleSearchChange}
               onKeyDown={handleKeyDown}
+              onFocus={() => setShowSearchHistory(true)}
               className="h-[40px] w-full px-2 border-[#3957db] border-[2px] rounded-md"
             />
             <AiOutlineSearch
@@ -122,6 +195,36 @@ const Header = ({ activeHeading }) => {
                 </div>
               ) : null
             }
+            
+            {/* Search History - Show when input is focused and no search data */}
+            {isAuthenticated && searchHistory.length > 0 && showSearchHistory && !searchData && (
+              <div className="absolute top-[42px] left-0 w-full bg-white shadow-lg z-[9] rounded-b-md max-h-[300px] overflow-y-auto">
+                <div className="p-2 border-b border-gray-200">
+                  <span className="text-xs text-gray-500 font-medium">Recent Searches</span>
+                </div>
+                {searchHistory.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between px-3 py-2 hover:bg-gray-50"
+                  >
+                    <span 
+                      className="text-sm text-gray-700 flex-1 cursor-pointer"
+                      onClick={() => handleHistoryItemClick(item.keyword)}
+                    >
+                      {item.keyword}
+                    </span>
+                    <RxCross1
+                      size={16}
+                      className="text-gray-400 hover:text-red-500 cursor-pointer ml-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteSearchItem(item.keyword, e);
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           {/* Search end */}
 

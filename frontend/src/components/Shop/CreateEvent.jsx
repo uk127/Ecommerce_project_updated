@@ -65,6 +65,11 @@ const CreateEvent = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        if (!seller || !seller._id) {
+            toast.error("Seller not found. Please login again.");
+            return;
+        }
+
         const newForm = new FormData();
 
         images.forEach((image) => {

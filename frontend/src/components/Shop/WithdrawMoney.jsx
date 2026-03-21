@@ -25,8 +25,10 @@ const WithdrawMoney = () => {
   });
 
   useEffect(() => {
-    dispatch(getAllOrdersOfShop(seller._id));
-  }, [dispatch]);
+    if (seller && seller._id) {
+      dispatch(getAllOrdersOfShop(seller._id));
+    }
+  }, [dispatch, seller]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -99,7 +101,7 @@ const WithdrawMoney = () => {
     }
   };
 
-  const availableBalance = seller?.availableBalance.toFixed(2);
+  const availableBalance = seller?.availableBalance?.toFixed(2) || "0.00";
 
   return (
     <div className="w-full h-[90vh] p-8">

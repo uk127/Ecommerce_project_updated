@@ -8,20 +8,23 @@ import { getAllOrdersOfShop } from "../../redux/actions/order";
 import { getAllProductsShop } from "../../redux/actions/product";
 import { Button } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
+import Loader from "../Layout/Loader";
 
 const DashboardHero = () => {
     const dispatch = useDispatch();
     const { orders } = useSelector((state) => state.order);
-    const { seller } = useSelector((state) => state.seller);
+    const { seller, isLoading } = useSelector((state) => state.seller);
     const { products } = useSelector((state) => state.products);
 
     useEffect(() => {
-        dispatch(getAllOrdersOfShop(seller._id));
-        dispatch(getAllProductsShop(seller._id));
-    }, [dispatch]);
+        if (seller && seller._id) {
+            dispatch(getAllOrdersOfShop(seller._id));
+            dispatch(getAllProductsShop(seller._id));
+        }
+    }, [dispatch, seller]);
 
     /*  is calculating the available balance of the seller and rounding it to 2 decimal places. */
-    const availableBalance = seller?.availableBalance.toFixed(2);
+    const availableBalance = seller?.availableBalance?.toFixed(2) || "0.00";
 
 
     const columns = [
@@ -33,7 +36,7 @@ const DashboardHero = () => {
             minWidth: 130,
             flex: 0.7,
             cellClassName: (params) => {
-                return params.getValue(params.id, "status") === "Delivered"
+                return params.row?.status === "Delivered"
                     ? "greenColor"
                     : "redColor";
             },

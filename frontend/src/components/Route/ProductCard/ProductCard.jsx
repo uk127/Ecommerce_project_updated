@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styles from "../../../styles/styles";
 import {
     AiFillHeart,
@@ -16,13 +16,16 @@ import { addToWishlist, removeFromWishlist } from '../../../redux/actions/wishli
 import { addTocart } from '../../../redux/actions/cart';
 import { toast } from 'react-toastify';
 import Ratings from "../../Products/Ratings";
+import useActivity from "../../../hooks/useActivity";
 
 const ProductCard = ({ data, isEvent }) => {
     const { wishlist } = useSelector((state) => state.wishlist);
     const { cart } = useSelector((state) => state.cart);
+    const { isAuthenticated, trackClick } = useActivity();
     const [click, setClick] = useState(false);
     const [open, setOpen] = useState(false);
     const dispatch = useDispatch();
+    const navigate = useNavigate();
 
 
 
@@ -63,6 +66,22 @@ const ProductCard = ({ data, isEvent }) => {
         }
     }
 
+    // Handle product click for recommendation tracking
+    const handleProductClick = () => {
+        if (isAuthenticated && data?._id) {
+            trackClick(data._id);
+        }
+    };
+
+    // Handle product card click - track and navigate
+    const handleProductCardClick = (e) => {
+        // Don't track if clicking on action buttons (wishlist, cart, quick view)
+        if (e.target.closest('.action-button')) {
+            return;
+        }
+        handleProductClick();
+    };
+
 
     return (
         <>
@@ -70,17 +89,23 @@ const ProductCard = ({ data, isEvent }) => {
                 <div className='flex justify-end'>
                 </div>
 
-                <Link to={`${isEvent === true ? `/product/${data?._id}?isEvent=true` : `/product/${data?._id}`}`}>
+                <Link 
+                    to={`${isEvent === true ? `/product/${data?._id}?isEvent=true` : `/product/${data?._id}`}`}
+                    onClick={handleProductClick}
+                >
                     <img
                         src={getImageUrl(data?.images && data?.images[0])}
                         alt="prd"
                         className='w-full h-[170px] object-contain'
                     />
                 </Link>
-                <Link to={`${isEvent === true ? `/product/${data?._id}?isEvent=true` : `/product/${data?._id}`}`}>
+                <Link 
+                    to={`${isEvent === true ? `/product/${data?._id}?isEvent=true` : `/product/${data?._id}`}`}
+                    onClick={handleProductClick}
+                >
                     <h5 className={`${styles.shop_name}`} >{data?.shop?.name}</h5>
                 </Link>
-                <Link to={`/product/${data?._id}`}>
+                <Link to={`/product/${data?._id}`} onClick={handleProductClick}>
                     <h4 className='pb-3 font-[500]'>
                         {data?.name?.length > 40 ? data?.name.slice(0, 40) + '...' : data?.name}
                     </h4>
@@ -93,6 +118,7 @@ const ProductCard = ({ data, isEvent }) => {
                         <div className='flex'>
                             <h5 className={`${styles.productDiscountPrice}`}>
                                 ₹{data?.originalPrice === 0 ? data?.originalPrice : data?.discountPrice}
+                                {data?.unit && <span className="text-[12px] font-normal text-gray-500 ml-1">/ {data.unit}</span>}
                             </h5>
 
                             <h4 className={`${styles.price}`}>

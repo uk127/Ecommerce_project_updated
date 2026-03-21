@@ -18,6 +18,7 @@ import { addTocart } from "../../redux/actions/cart";
 import { toast } from "react-toastify";
 import Ratings from "./Ratings";
 import axios from "axios";
+import useActivity from "../../hooks/useActivity";
 
 const ProductDetails = ({ data }) => {
   const { products } = useSelector((state) => state.products);
@@ -25,6 +26,7 @@ const ProductDetails = ({ data }) => {
   const { wishlist } = useSelector((state) => state.wishlist);
   const { cart } = useSelector((state) => state.cart);
   const dispatch = useDispatch();
+  const { trackView } = useActivity();
 
   const [count, setCount] = useState(1);
   const [click, setClick] = useState(false);
@@ -39,6 +41,13 @@ const ProductDetails = ({ data }) => {
       setClick(false);
     }
   }, [data, wishlist]);
+
+  // Track product view for recommendation system
+  useEffect(() => {
+    if (data?._id && isAuthenticated) {
+      trackView(data._id);
+    }
+  }, [data?._id, isAuthenticated, trackView]);
 
   // Remove from wish list
   const removeFromWishlistHandler = (data) => {
@@ -166,9 +175,11 @@ const ProductDetails = ({ data }) => {
                 <div className="flex pt-3">
                   <h4 className={`${styles.productDiscountPrice}`}>
                     ₹{data.discountPrice}
+                    {data.unit && <span className="text-[14px] font-normal text-gray-500 ml-1">/ {data.unit}</span>}
                   </h4>
                   <h3 className={`${styles.price}`}>
                     {data.originalPrice ? "₹" + data.originalPrice : null}
+                    {data.originalPrice && data.unit && <span className="text-[12px] font-normal text-gray-500 ml-1">/ {data.unit}</span>}
                   </h3>
                 </div>
 

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { server } from "../../server";
+import { mergeCartAfterLogin, fetchCart } from "./cart";
 
 // load user
 export const loadUser = () => async (dispatch) => {
@@ -14,6 +15,10 @@ export const loadUser = () => async (dispatch) => {
       type: "LoadUserSuccess",
       payload: data.user,
     });
+
+    // After successful user load, fetch cart from backend
+    // This will clear any localStorage data and use the database cart
+    dispatch(fetchCart());
   } catch (error) {
     dispatch({
       type: "LoadUserFail",
@@ -161,11 +166,3 @@ export const getAllUsers = () => async (dispatch) => {
     });
   }
 };
-
-// what is action in redux ?
-// Trigger an event , and call reducer
-// action is a plain object that contains information about an event that has occurred
-// action is the only way to change the state in redux
-// action is the only way to send data from the application to the store
-
-// dispatch :- active action , (action trigger)

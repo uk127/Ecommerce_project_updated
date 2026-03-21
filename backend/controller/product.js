@@ -33,9 +33,52 @@ router.post(
           }
         }
 
-        const productData = req.body;
-        productData.images = imageUrls;
-        productData.shop = shop;
+        // Build product data object
+        const productData = {
+          name: req.body.name,
+          description: req.body.description,
+          category: req.body.category,
+          originalPrice: Number(req.body.originalPrice),
+          discountPrice: Number(req.body.discountPrice),
+          stock: Number(req.body.stock),
+          shopId: req.body.shopId,
+          shop: shop,
+          images: imageUrls,
+        };
+        
+        // Handle optional fields - only add if they have valid values
+        if (req.body.productType && req.body.productType.trim() !== '') {
+          productData.productType = req.body.productType.trim();
+        }
+        
+        if (req.body.brand && req.body.brand.trim() !== '') {
+          productData.brand = req.body.brand.trim();
+        }
+        
+        if (req.body.unit && req.body.unit.trim() !== '') {
+          productData.unit = req.body.unit.trim();
+        }
+        
+        // Parse tags if it's a JSON string
+        if (req.body.tags) {
+          try {
+            const parsedTags = typeof req.body.tags === 'string' ? JSON.parse(req.body.tags) : req.body.tags;
+            if (Array.isArray(parsedTags) && parsedTags.length > 0) {
+              productData.tags = parsedTags;
+            }
+          } catch (e) {
+            // If not valid JSON, split by comma as fallback
+            const tagsArray = req.body.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+            if (tagsArray.length > 0) {
+              productData.tags = tagsArray;
+            }
+          }
+        }
+        
+        // Convert expiryDate to Date object if provided
+        if (req.body.expiryDate && req.body.expiryDate.trim() !== '') {
+          productData.expiryDate = new Date(req.body.expiryDate);
+        }
 
         const product = await Product.create(productData);
 
@@ -45,7 +88,8 @@ router.post(
         });
       }
     } catch (error) {
-      return next(new ErrorHandler(error, 400));
+      console.error("Error creating product:", error);
+      return next(new ErrorHandler(error.message || error, 400));
     }
   })
 );

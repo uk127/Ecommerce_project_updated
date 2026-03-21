@@ -9,13 +9,15 @@ import { AiOutlineArrowRight } from "react-icons/ai";
 
 const AllOrders = () => {
     const { orders, isLoading } = useSelector((state) => state.order);
-    const { seller } = useSelector((state) => state.seller);
+    const { seller, isLoading: sellerLoading } = useSelector((state) => state.seller);
 
     const dispatch = useDispatch();
 
     useEffect(() => {
-        dispatch(getAllOrdersOfShop(seller._id));
-    }, [dispatch]);
+        if (seller && seller._id) {
+            dispatch(getAllOrdersOfShop(seller._id));
+        }
+    }, [dispatch, seller]);
 
     const columns = [
         { field: "id", headerName: "Order ID", minWidth: 150, flex: 0.7 },
@@ -26,7 +28,7 @@ const AllOrders = () => {
             minWidth: 130,
             flex: 0.7,
             cellClassName: (params) => {
-                return params.getValue(params.id, "status") === "Delivered"
+                return params.row?.status === "Delivered"
                     ? "greenColor"
                     : "redColor";
             },

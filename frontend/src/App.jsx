@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./App.css";
 import Store from "./redux/store";
+import AIAssistant from "./components/AIAssistant";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import {
   LoginPage,
@@ -367,6 +368,7 @@ const App = () => {
         pauseOnHover
         theme="dark"
       />
+      <AIAssistant />
     </BrowserRouter>
   );
 };

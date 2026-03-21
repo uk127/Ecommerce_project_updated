@@ -11,13 +11,15 @@ import Loader from "../Layout/Loader";
 
 const AllEvents = () => {
   const { events, isLoading } = useSelector((state) => state.events);
-  const { seller } = useSelector((state) => state.seller);
+  const { seller, isLoading: sellerLoading } = useSelector((state) => state.seller);
 
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(getAllEventsShop(seller._id));
-  }, [dispatch]);
+    if (seller && seller._id) {
+      dispatch(getAllEventsShop(seller._id));
+    }
+  }, [dispatch, seller]);
 
   const handleDelete = (id) => {
     dispatch(deleteEvent(id));

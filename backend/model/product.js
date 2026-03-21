@@ -13,8 +13,15 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: [true, "Please enter your product category!"],
   },
-  tags: {
+  productType: {
     type: String,
+  },
+  brand: {
+    type: String,
+  },
+  tags: {
+    type: [String],
+    default: [],
   },
   originalPrice: {
     type: Number,
@@ -23,9 +30,15 @@ const productSchema = new mongoose.Schema({
     type: Number,
     required: [true, "Please enter your product price!"],
   },
+  unit: {
+    type: String,
+  },
   stock: {
     type: Number,
     required: [true, "Please enter your product stock!"],
+  },
+  expiryDate: {
+    type: Date,
   },
   images: [
     {
@@ -79,13 +92,17 @@ productSchema.index({
   name: "text",
   description: "text",
   category: "text",
-  tags: "text"
+  tags: "text",
+  productType: "text",
+  brand: "text"
 }, {
   weights: {
     name: 5,       // Name has highest weight
     description: 3,
     category: 2,
-    tags: 1
+    tags: 1,
+    productType: 2,
+    brand: 2
   },
   name: "ProductTextIndex"
 });

@@ -57,6 +57,10 @@ const order = require("./controller/order");
 const message = require("./controller/message");
 const conversation = require("./controller/conversation");
 const withdraw = require("./controller/withdraw");
+const aiAssistant = require("./controller/aiAssistant");
+const cart = require("./controller/cart");
+const activityRoutes = require("./routes/activityRoutes");
+const recommendationRoutes = require("./routes/recommendationRoutes");
 app.use("/api/v2/withdraw", withdraw);
 
 // end points
@@ -69,6 +73,10 @@ app.use("/api/v2/product", product);
 app.use("/api/v2/event", event);
 app.use("/api/v2/coupon", coupon);
 app.use("/api/v2/payment", payment);
+app.use("/api/v2/ai-assistant", aiAssistant);
+app.use("/api/v2/cart", cart);
+app.use("/api/v2/activity", activityRoutes);
+app.use("/api/v2/recommendations", recommendationRoutes);
 
 // it'for errhendel
 app.use(ErrorHandler);

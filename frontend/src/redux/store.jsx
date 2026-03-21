@@ -9,7 +9,6 @@ import { orderReducer } from "./reducers/order";
 
 const Store = configureStore({
   reducer: {
-    // Reducers
     user: userReducer,
     seller: sellerReducer,
     products: productReducer,

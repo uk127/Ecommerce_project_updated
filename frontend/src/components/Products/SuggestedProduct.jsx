@@ -4,20 +4,16 @@ import { productData } from '../../static/data'
 import styles from "../../styles/styles";
 import ProductCard from "../Route/ProductCard/ProductCard"
 
-
-
-
 const SuggestedProduct = ({ data }) => {
     const [products, setProducts] = useState([])
     const { allProducts } = useSelector((state) => state.products);
     const [productData, setProductData] = useState();
 
-    // Proudect is filter when the cataegory is same as the current product when page is loaded
+    // Product is filter when the cataegory is same as the current product when page is loaded
     useEffect(() => {
         const d = allProducts && allProducts.filter((i) => i.category === data.category)
         setProductData(d)
     }, [])
-
     return (
         <div>
             {

@@ -25,19 +25,21 @@ const AllCoupons = () => {
     const dispatch = useDispatch();
 
     useEffect(() => {
-        setIsLoading(true);
-        axios
-            .get(`${server}/coupon/get-coupon/${seller._id}`, {
-                withCredentials: true,
-            })
-            .then((res) => {
-                setIsLoading(false);
-                setCoupouns(res.data.couponCodes);
-            })
-            .catch((error) => {
-                setIsLoading(false);
-            });
-    }, [dispatch]);
+        if (seller && seller._id) {
+            setIsLoading(true);
+            axios
+                .get(`${server}/coupon/get-coupon/${seller._id}`, {
+                    withCredentials: true,
+                })
+                .then((res) => {
+                    setIsLoading(false);
+                    setCoupouns(res.data.couponCodes);
+                })
+                .catch((error) => {
+                    setIsLoading(false);
+                });
+        }
+    }, [dispatch, seller]);
 
     const handleDelete = async (id) => {
         axios.delete(`${server}/coupon/delete-coupon/${id}`, { withCredentials: true }).then((res) => {
