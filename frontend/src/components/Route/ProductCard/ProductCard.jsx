@@ -89,7 +89,7 @@ const ProductCard = ({ data, isEvent }) => {
                 <div className='flex justify-end'>
                 </div>
 
-                <Link 
+                <Link
                     to={`${isEvent === true ? `/product/${data?._id}?isEvent=true` : `/product/${data?._id}`}`}
                     onClick={handleProductClick}
                 >
@@ -99,7 +99,7 @@ const ProductCard = ({ data, isEvent }) => {
                         className='w-full h-[170px] object-contain'
                     />
                 </Link>
-                <Link 
+                <Link
                     to={`${isEvent === true ? `/product/${data?._id}?isEvent=true` : `/product/${data?._id}`}`}
                     onClick={handleProductClick}
                 >
@@ -126,9 +126,9 @@ const ProductCard = ({ data, isEvent }) => {
                             </h4>
                         </div>
 
-                        <span className="font-[400] text-[17px] text-[#68d284]">
+                        {/* <span className="font-[400] text-[17px] text-[#68d284]">
                             {data?.sold_out} sold
-                        </span>
+                        </span> */}
                     </div>
                 </Link>
 

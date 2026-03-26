@@ -6,6 +6,7 @@ import { createProduct } from "../../redux/actions/product";
 import { categoriesData } from "../../static/data";
 import { toast } from "react-toastify";
 import { backend_url } from "../../server";
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 
 // Product types based on category
 const productTypesByCategory = {
@@ -17,6 +18,10 @@ const productTypesByCategory = {
         "Dairy Product",
         "Nuts / Dry Fruits",
         "Snack",
+        "Ready Mix / Instant Mix",
+        "Breakfast / Cereals",
+        "Spreads / Sauces",
+        "Bakery",
         "Others"
     ],
     "Home & Office": [
@@ -110,6 +115,145 @@ const unitOptions = [
     "Set"
 ];
 
+// Maximum regenerations allowed per field
+const MAX_REGENERATIONS = 3;
+
+// Initial regeneration state
+const initialRegenerationState = {
+    all: { count: MAX_REGENERATIONS, hasGenerated: false },
+    title: { count: MAX_REGENERATIONS, hasGenerated: false },
+    description: { count: MAX_REGENERATIONS, hasGenerated: false },
+    tags: { count: MAX_REGENERATIONS, hasGenerated: false },
+    brand: { count: MAX_REGENERATIONS, hasGenerated: false }
+};
+
+// Loading spinner component
+const LoadingSpinner = ({ size = 16 }) => (
+    <svg 
+        className="animate-spin" 
+        style={{ width: size, height: size }} 
+        xmlns="http://www.w3.org/2000/svg" 
+        fill="none" 
+        viewBox="0 0 24 24"
+    >
+        <circle 
+            className="opacity-25" 
+            cx="12" 
+            cy="12" 
+            r="10" 
+            stroke="currentColor" 
+            strokeWidth="4"
+        ></circle>
+        <path 
+            className="opacity-75" 
+            fill="currentColor" 
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+    </svg>
+);
+
+// AI Button Component
+const AIButton = ({ 
+    onClick, 
+    isLoading, 
+    disabled, 
+    regenerationState,
+    hasImage
+}) => {
+    const { count, hasGenerated } = regenerationState;
+    const isDisabled = disabled || !hasImage || count <= 0;
+    
+    const getButtonText = () => {
+        if (isLoading) return "Generating...";
+        if (!hasGenerated) return "Generate";
+        if (count <= 0) return "No regenerations left";
+        return `Regenerate (${count} left)`;
+    };
+
+    const getButtonStyle = () => {
+        if (isDisabled) {
+            return "bg-gray-200 text-gray-400 cursor-not-allowed";
+        }
+        if (isLoading) {
+            return "bg-blue-400 text-white cursor-wait";
+        }
+        if (hasGenerated) {
+            return "bg-purple-100 text-purple-700 hover:bg-purple-200";
+        }
+        return "bg-blue-100 text-blue-700 hover:bg-blue-200";
+    };
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={isDisabled || isLoading}
+            className={`flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full transition-colors ${getButtonStyle()}`}
+            title={!hasImage ? "Upload an image first" : hasGenerated ? `Regenerate (${count} left)` : "Generate with AI"}
+        >
+            {isLoading ? (
+                <LoadingSpinner size={12} />
+            ) : (
+                <AutoFixHighIcon sx={{ fontSize: 14 }} />
+            )}
+            {getButtonText()}
+        </button>
+    );
+};
+
+// Fill All Button Component
+const FillAllButton = ({ onClick, isLoading, disabled, hasImage, regenerationState }) => {
+    const { count, hasGenerated } = regenerationState;
+    const isDisabled = disabled || !hasImage || count <= 0;
+
+    const getButtonText = () => {
+        if (isLoading) return (
+            <>
+                <LoadingSpinner size={14} />
+                <span>Generating...</span>
+            </>
+        );
+        if (!hasGenerated) return (
+            <>
+                <AutoFixHighIcon sx={{ fontSize: 16 }} />
+                <span> Fill All</span>
+            </>
+        );
+        if (count <= 0) return "No regenerations left";
+        return (
+            <>
+                <AutoFixHighIcon sx={{ fontSize: 16 }} />
+                <span>Regenerate All ({count} left)</span>
+            </>
+        );
+    };
+
+    const getButtonStyle = () => {
+        if (isDisabled) {
+            return "bg-gray-200 text-gray-400 cursor-not-allowed";
+        }
+        if (isLoading) {
+            return "bg-blue-400 text-white cursor-wait";
+        }
+        if (hasGenerated) {
+            return "bg-purple-500 text-white hover:bg-purple-600";
+        }
+        return "bg-blue-600 text-white hover:bg-blue-700";
+    };
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={isDisabled || isLoading}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${getButtonStyle()}`}
+            title={!hasImage ? "Upload an image first" : hasGenerated ? `Regenerate All (${count} left)` : "Fill all fields with AI"}
+        >
+            {getButtonText()}
+        </button>
+    );
+};
+
 const CreateProduct = () => {
     const { seller } = useSelector((state) => state.seller);
     const { success, error } = useSelector((state) => state.products);
@@ -130,9 +274,23 @@ const CreateProduct = () => {
     const [unit, setUnit] = useState("");
     const [stock, setStock] = useState("");
     const [expiryDate, setExpiryDate] = useState("");
+    
+    // Image URL state (for AI generation)
+    const [uploadedImageUrl, setUploadedImageUrl] = useState("");
 
     // AI states
-    const [isGenerating, setIsGenerating] = useState(false);
+    const [isGenerating, setIsGenerating] = useState({
+        all: false,
+        title: false,
+        description: false,
+        tags: false,
+        brand: false
+    });
+    
+    // Regeneration tracking
+    const [regenerations, setRegenerations] = useState(initialRegenerationState);
+    
+    // Other UI states
     const [showRemoveBgPopup, setShowRemoveBgPopup] = useState(false);
     const [isProcessingBgRemoval, setIsProcessingBgRemoval] = useState(false);
     const [processingImageIndex, setProcessingImageIndex] = useState(null);
@@ -189,10 +347,14 @@ const CreateProduct = () => {
         e.preventDefault();
         let files = Array.from(e.target.files);
         setImages((prevImages) => [...prevImages, ...files]);
+        // Reset uploaded image URL when new images are added
+        setUploadedImageUrl("");
     };
 
     const removeImage = (index) => {
         setImages(images.filter((_, i) => i !== index));
+        // Reset uploaded image URL when image is removed
+        setUploadedImageUrl("");
     };
 
     // Calculate display price
@@ -206,46 +368,118 @@ const CreateProduct = () => {
         return "";
     };
 
-    const handleGenerateTitleAndDescription = async () => {
+    // Upload image to Cloudinary and get URL
+    const uploadImageToCloudinary = async (imageFile) => {
+        const formData = new FormData();
+        formData.append("image", imageFile);
+
+        const response = await fetch(`${backend_url}api/v2/product/generate-title-description`, {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to upload image: ${response.status}`);
+        }
+
+        const result = await response.json();
+        return result.imageUrl;
+    };
+
+    // Get or upload image URL for AI generation
+    const getImageUrlForAI = async () => {
+        if (uploadedImageUrl) {
+            return uploadedImageUrl;
+        }
+
         if (images.length === 0) {
-            toast.error("Please upload an image first");
-            return;
+            throw new Error("Please upload an image first");
         }
 
         if (images.length > 1) {
-            toast.error("Please upload only one image for AI generation");
-            return;
+            throw new Error("Please upload only one image for AI generation");
         }
 
-        setIsGenerating(true);
+        const imageToUse = processedImages[0] || images[0];
+        const imageUrl = await uploadImageToCloudinary(imageToUse);
+        setUploadedImageUrl(imageUrl);
+        return imageUrl;
+    };
 
+    // Generic AI generation function
+    const generateWithAI = async (mode) => {
         try {
-            const formData = new FormData();
-            formData.append("image", images[0]);
+            const imageUrl = await getImageUrlForAI();
 
-            const response = await fetch(`${backend_url}api/v2/product/generate-title-description`, {
+            setIsGenerating(prev => ({ ...prev, [mode]: true }));
+
+            const response = await fetch(`${backend_url}api/v2/product/generate-product`, {
                 method: "POST",
-                body: formData,
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    mode,
+                    imageUrl,
+                    category: category || "",
+                    productType: productType || ""
+                }),
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                throw new Error(`Failed to generate: ${response.status}`);
             }
 
             const result = await response.json();
 
-            setName(result.title);
-            setDescription(result.description);
+            if (result.success && result.data) {
+                // Update form fields based on mode
+                if (mode === 'all' || mode === 'title') {
+                    setName(result.data.title || "");
+                }
+                if (mode === 'all' || mode === 'description') {
+                    setDescription(result.data.description || "");
+                }
+                if (mode === 'all' || mode === 'tags') {
+                    if (Array.isArray(result.data.tags) && result.data.tags.length > 0) {
+                        setTags(result.data.tags);
+                    }
+                }
+                if (mode === 'all' || mode === 'brand') {
+                    setBrand(result.data.brand || "");
+                }
 
-            toast.success("Title and description generated successfully!");
+                // Update regeneration state
+                setRegenerations(prev => ({
+                    ...prev,
+                    [mode]: {
+                        count: prev[mode].count - 1,
+                        hasGenerated: true
+                    }
+                }));
+
+                toast.success(`${mode === 'all' ? 'All fields' : mode.charAt(0).toUpperCase() + mode.slice(1)} generated successfully!`);
+            } else {
+                throw new Error("Invalid response from AI");
+            }
         } catch (error) {
-            console.error("Error generating title and description:", error);
-            toast.error(`Failed to generate title and description: ${error.message}`);
+            console.error(`[Generate ${mode}] Error:`, error);
+            toast.error(error.message || `Failed to generate ${mode}`);
         } finally {
-            setIsGenerating(false);
+            setIsGenerating(prev => ({ ...prev, [mode]: false }));
         }
     };
+
+    // Handle Fill All
+    const handleFillAll = () => generateWithAI('all');
+    
+    // Handle individual field generation
+    const handleGenerateTitle = () => generateWithAI('title');
+    const handleGenerateDescription = () => generateWithAI('description');
+    const handleGenerateTags = () => generateWithAI('tags');
+    const handleGenerateBrand = () => generateWithAI('brand');
 
     const handleRemoveBackground = async (imageIndex) => {
         try {
@@ -279,6 +513,9 @@ const CreateProduct = () => {
                     [imageIndex]: newFile
                 }));
 
+                // Reset uploaded image URL since image was modified
+                setUploadedImageUrl("");
+
                 toast.success("Background removed successfully!");
             } else {
                 throw new Error("Invalid response from server");
@@ -299,7 +536,7 @@ const CreateProduct = () => {
             return;
         }
 
-        // Validation - only check required fields
+        // Validation
         if (!name) {
             toast.error("Please enter product name!");
             return;
@@ -344,7 +581,7 @@ const CreateProduct = () => {
         newForm.append("stock", stock);
         newForm.append("shopId", seller._id);
 
-        // Optional fields - only append if they have values
+        // Optional fields
         if (productType) {
             newForm.append("productType", productType);
         }
@@ -357,7 +594,6 @@ const CreateProduct = () => {
         if (discountPrice) {
             newForm.append("discountPrice", discountPrice);
         } else {
-            // If no discount price, use original price as discount price (required by backend)
             newForm.append("discountPrice", originalPrice);
         }
         if (unit) {
@@ -369,6 +605,8 @@ const CreateProduct = () => {
 
         dispatch(createProduct(newForm));
     };
+
+    const hasImage = images.length > 0;
 
     return (
         <div className="w-[90%] 800px:w-[60%] bg-white shadow-lg h-[85vh] rounded-lg p-6 overflow-y-scroll">
@@ -386,9 +624,18 @@ const CreateProduct = () => {
 
                     {/* Product Name */}
                     <div className="mb-4">
-                        <label className="block pb-2 text-sm font-medium text-gray-700">
-                            Product Name <span className="text-red-500">*</span>
-                        </label>
+                        <div className="flex items-center justify-between pb-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Product Name <span className="text-red-500">*</span>
+                            </label>
+                            <AIButton
+                                onClick={handleGenerateTitle}
+                                isLoading={isGenerating.title}
+                                disabled={false}
+                                regenerationState={regenerations.title}
+                                hasImage={hasImage}
+                            />
+                        </div>
                         <input
                             type="text"
                             name="name"
@@ -401,9 +648,18 @@ const CreateProduct = () => {
 
                     {/* Description */}
                     <div className="mb-4">
-                        <label className="block pb-2 text-sm font-medium text-gray-700">
-                            Description <span className="text-red-500">*</span>
-                        </label>
+                        <div className="flex items-center justify-between pb-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Description <span className="text-red-500">*</span>
+                            </label>
+                            <AIButton
+                                onClick={handleGenerateDescription}
+                                isLoading={isGenerating.description}
+                                disabled={false}
+                                regenerationState={regenerations.description}
+                                hasImage={hasImage}
+                            />
+                        </div>
                         <textarea
                             cols="30"
                             required
@@ -459,9 +715,18 @@ const CreateProduct = () => {
 
                     {/* Tags */}
                     <div className="mb-4">
-                        <label className="block pb-2 text-sm font-medium text-gray-700">
-                            Tags <span className="text-gray-400 text-xs">(Press comma or Enter to add)</span>
-                        </label>
+                        <div className="flex items-center justify-between pb-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Tags <span className="text-gray-400 text-xs">(Press comma or Enter to add)</span>
+                            </label>
+                            <AIButton
+                                onClick={handleGenerateTags}
+                                isLoading={isGenerating.tags}
+                                disabled={false}
+                                regenerationState={regenerations.tags}
+                                hasImage={hasImage}
+                            />
+                        </div>
                         <div className="border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 bg-white">
                             <div className="flex flex-wrap gap-2 p-2">
                                 {tags.map((tag, index) => (
@@ -494,9 +759,18 @@ const CreateProduct = () => {
 
                     {/* Brand */}
                     <div className="mb-4">
-                        <label className="block pb-2 text-sm font-medium text-gray-700">
-                            Brand
-                        </label>
+                        <div className="flex items-center justify-between pb-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Brand
+                            </label>
+                            <AIButton
+                                onClick={handleGenerateBrand}
+                                isLoading={isGenerating.brand}
+                                disabled={false}
+                                regenerationState={regenerations.brand}
+                                hasImage={hasImage}
+                            />
+                        </div>
                         <input
                             type="text"
                             name="brand"
@@ -620,9 +894,18 @@ const CreateProduct = () => {
 
                 {/* Section 4: Product Media */}
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h6 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
-                        <span className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">4</span>
-                        Product Media
+                    <h6 className="text-lg font-semibold text-gray-700 mb-4 flex items-center justify-between">
+                        <div className="flex items-center">
+                            <span className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">4</span>
+                            Product Media
+                        </div>
+                        <FillAllButton
+                            onClick={handleFillAll}
+                            isLoading={isGenerating.all}
+                            disabled={false}
+                            hasImage={hasImage}
+                            regenerationState={regenerations.all}
+                        />
                     </h6>
 
                     {/* Product Image Upload */}
@@ -674,41 +957,24 @@ const CreateProduct = () => {
                         {/* AI Buttons */}
                         {images.length > 0 && (
                             <div className="mt-4 flex flex-wrap gap-3">
-                                {images.length === 1 && (
-                                    <button
-                                        type="button"
-                                        onClick={handleGenerateTitleAndDescription}
-                                        disabled={isGenerating}
-                                        className={`flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white ${isGenerating
-                                            ? "bg-gray-400 cursor-not-allowed"
-                                            : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                            }`}
-                                    >
-                                        {isGenerating ? (
-                                            <>
-                                                <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                Generating...
-                                            </>
-                                        ) : (
-                                            "🪄 Generate Title & Description"
-                                        )}
-                                    </button>
-                                )}
-
                                 <button
                                     type="button"
                                     onClick={() => setShowRemoveBgPopup(true)}
                                     disabled={isProcessingBgRemoval}
-                                    className={`flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white ${isProcessingBgRemoval
-                                        ? "bg-gray-400 cursor-not-allowed"
-                                        : "bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                    className={`flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full transition-colors ${isProcessingBgRemoval
+                                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                        : "bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                                         }`}
                                 >
-                                    {isProcessingBgRemoval ? "Processing..." : "🎨 Remove Background"}
+                                    {isProcessingBgRemoval ? "Processing..." : " Remove Bg"}
                                 </button>
+                            </div>
+                        )}
+                        
+                        {/* Image URL display for debugging */}
+                        {uploadedImageUrl && (
+                            <div className="mt-2 text-xs text-gray-500">
+                                Image URL: <span className="text-green-600">Ready for AI generation</span>
                             </div>
                         )}
                     </div>
@@ -761,11 +1027,8 @@ const CreateProduct = () => {
                                         {processingImageIndex === index && (
                                             <div className="absolute inset-0 bg-black bg-opacity-50 rounded flex items-center justify-center">
                                                 <div className="flex flex-col items-center text-white">
-                                                    <svg className="animate-spin h-8 w-8 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                    </svg>
-                                                    <span className="text-sm">Processing...</span>
+                                                    <LoadingSpinner size={32} />
+                                                    <span className="text-sm mt-2">Processing...</span>
                                                 </div>
                                             </div>
                                         )}

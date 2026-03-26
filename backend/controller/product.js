@@ -11,6 +11,7 @@ const fs = require("fs");
 const { searchProducts, searchProductNames } = require("../utils/productSearch");
 const axios = require("axios");
 const FormData = require("form-data");
+const { buildPrompt, parseAIResponse, validateRequest } = require("../utils/promptBuilder");
 
 // create product
 router.post(
@@ -45,20 +46,20 @@ router.post(
           shop: shop,
           images: imageUrls,
         };
-        
+
         // Handle optional fields - only add if they have valid values
         if (req.body.productType && req.body.productType.trim() !== '') {
           productData.productType = req.body.productType.trim();
         }
-        
+
         if (req.body.brand && req.body.brand.trim() !== '') {
           productData.brand = req.body.brand.trim();
         }
-        
+
         if (req.body.unit && req.body.unit.trim() !== '') {
           productData.unit = req.body.unit.trim();
         }
-        
+
         // Parse tags if it's a JSON string
         if (req.body.tags) {
           try {
@@ -74,7 +75,7 @@ router.post(
             }
           }
         }
-        
+
         // Convert expiryDate to Date object if provided
         if (req.body.expiryDate && req.body.expiryDate.trim() !== '') {
           productData.expiryDate = new Date(req.body.expiryDate);
@@ -295,6 +296,96 @@ router.get(
   })
 );
 
+// Generate product data using OpenRouter AI with dynamic prompt builder
+// Supports modes: 'all', 'title', 'description', 'tags', 'brand'
+router.post(
+  "/generate-product",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { mode = 'all', imageUrl, category, productType } = req.body;
+
+      console.log("[Generate Product] Received request:", { mode, imageUrl, category, productType });
+
+      // Validate request parameters
+      const validation = validateRequest({ mode, imageUrl });
+      if (!validation.valid) {
+        return next(new ErrorHandler(validation.error, 400));
+      }
+
+      // Call OpenRouter API
+      const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+
+      if (!openRouterApiKey) {
+        console.error("[Generate Product] OPENROUTER_API_KEY not found in environment");
+        return next(new ErrorHandler("OpenRouter API key not configured", 500));
+      }
+
+      // Build dynamic prompt using the prompt builder
+      const prompt = buildPrompt({ mode, category, productType, imageUrl });
+      console.log("[Generate Product] Built prompt for mode:", mode);
+
+      console.log("[Generate Product] Calling OpenRouter API...");
+
+      const response = await axios.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          model: "openai/gpt-4o-mini",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: prompt
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: imageUrl
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          headers: {
+            "Authorization": `Bearer ${openRouterApiKey}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": "http://localhost:3000",
+            "X-Title": "SigmaStore Product Generator"
+          },
+          timeout: 60000
+        }
+      );
+
+      console.log("[Generate Product] OpenRouter response received");
+
+      // Extract the content from the response
+      const content = response.data.choices[0].message.content;
+      console.log("[Generate Product] Raw AI content:", content);
+
+      // Parse and validate the AI response using prompt builder
+      const productData = parseAIResponse(content, mode);
+      console.log("[Generate Product] Parsed product data:", productData);
+
+      res.status(200).json({
+        success: true,
+        mode,
+        data: productData
+      });
+    } catch (error) {
+      console.error("[Generate Product] Error:", {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      return next(new ErrorHandler(error.message || "Failed to generate product data", 500));
+    }
+  })
+);
+
 // Generate title and description using AI
 router.post(
   "/generate-title-description",
@@ -311,7 +402,7 @@ router.post(
 
       // Send image to Python Flask server for AI processing
       const pythonServerUrl = process.env.FLASK_ML_SERVICE_URL || "http://localhost:5000";
-      
+
       // Create FormData with the image buffer
       // const formData = new FormData();
       // formData.append('image', req.file.buffer, {
@@ -373,7 +464,7 @@ router.post(
 
       // Send image directly to Python Flask server for background removal
       const pythonServerUrl = process.env.FLASK_ML_SERVICE_URL || "http://localhost:5000";
-      
+
       // Create FormData with the image buffer
       const formData = new FormData();
       formData.append('image', req.file.buffer, {

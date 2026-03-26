@@ -1,0 +1,559 @@
+[
+    {
+        "title": "Apple MacBook Pro 16 inch",
+        "tags": [
+            "macbook",
+            "laptop",
+            "electronics"
+        ],
+        "category": "Electronics & Appliances",
+        "productType": "Laptops"
+    },
+    {
+        "title": "Fresh Organic Apples pack",
+        "tags": [
+            "apple",
+            "fruit",
+            "grocery"
+        ],
+        "category": "Grocery",
+        "productType": "Fruit"
+    },
+    {
+        "title": "Fresh Apples",
+        "tags": [
+            "apple",
+            "fruit",
+            "fruits"
+        ],
+        "category": "Grocery",
+        "productType": "Fruit"
+    },
+    {
+        "title": "Daawat Pulav Basmati Rice (Slender Grains)",
+        "tags": [
+            "rice"
+        ],
+        "category": "Grocery",
+        "productType": "Grain / Rice"
+    },
+    {
+        "title": "Organic India Organic Cow Ghee",
+        "tags": [
+            "ghee"
+        ],
+        "category": "Grocery",
+        "productType": "Grain / Rice"
+    },
+    {
+        "title": "Hybrid Tomato",
+        "tags": [
+            "vegetable",
+            "tomato"
+        ],
+        "category": "Grocery",
+        "productType": "Vegetable"
+    },
+    {
+        "title": "Coriander Bunch",
+        "tags": [
+            "vegetable",
+            "coriander"
+        ],
+        "category": "Grocery",
+        "productType": "Vegetable"
+    },
+    {
+        "title": "Green Capsicum",
+        "tags": [
+            "green capsicum",
+            "fresh vegetables",
+            "bell pepper",
+            "organic produce",
+            "shimla mirch",
+            "healthy greens"
+        ],
+        "category": "Grocery",
+        "productType": "Vegetable"
+    },
+    {
+        "title": "Fresh Sapota (Chickoo) – Naturally Sweet & Energy-Rich",
+        "tags": [
+            "fresh sapota",
+            "chickoo",
+            "naturally sweet",
+            "energy rich",
+            "seasonal fruit",
+            "sapodilla"
+        ],
+        "category": "Grocery",
+        "productType": "Fruit"
+    },
+    {
+        "title": "Sweet & Refreshing Muskmelon",
+        "tags": [
+            "muskmelon",
+            "sweet muskmelon",
+            "refreshing fruit",
+            "cantaloupe",
+            "kharbuja",
+            "summer fruit"
+        ],
+        "category": "Grocery",
+        "productType": "Fruit"
+    },
+    {
+        "title": "Malberry ( Shahtoot)",
+        "tags": [
+            "fresh mulberry",
+            "shahtoot",
+            "sweet berries",
+            "natural antioxidants",
+            "exotic fruits",
+            "healthy snacks"
+        ],
+        "category": "Grocery",
+        "productType": "Fruit"
+    },
+    {
+        "title": "Papaya",
+        "tags": [
+            "fresh mulberry",
+            "shahtoot",
+            "sweet berries",
+            "natural antioxidants",
+            "exotic fruits",
+            "healthy snacks"
+        ],
+        "category": "Grocery",
+        "productType": "Fruit"
+    },
+    {
+        "title": "Fresh Cabbage",
+        "tags": [
+            "fresh cabbage",
+            "leafy vegetables",
+            "green cabbage",
+            "organic cabbage",
+            "patta gobhi",
+            "cruciferous veg"
+        ],
+        "category": "Grocery",
+        "productType": "Vegetable"
+    },
+    {
+        "title": "Garlic 100g",
+        "tags": [
+            "garlic 100g",
+            "fresh garlic",
+            "cooking essential",
+            "organic garlic",
+            "lahsun",
+            "pantry staple"
+        ],
+        "category": "Grocery",
+        "productType": "Vegetable"
+    },
+    {
+        "title": "Lady's Finger (Okra) 100g",
+        "tags": [
+            "lady's finger",
+            "okra",
+            "fresh bhindi",
+            "green vegetables",
+            "organic okra",
+            "cooking essential"
+        ],
+        "category": "Grocery",
+        "productType": "Vegetable"
+    },
+    {
+        "title": "Lemon 1pc",
+        "tags": [
+            "lemon",
+            "fresh lemon",
+            "citrus fruit",
+            "nimbu",
+            "vitamin c rich",
+            "cooking essential"
+        ],
+        "category": "Grocery",
+        "productType": "Vegetable"
+    },
+    {
+        "title": "Broccoli 500g",
+        "tags": [
+            "fresh broccoli",
+            "broccoli 500g",
+            "cruciferous vegetable",
+            "green florets",
+            "organic broccoli",
+            "healthy greens"
+        ],
+        "category": "Grocery",
+        "productType": "Vegetable"
+    },
+    {
+        "title": "Britannia 5050 Maska Chaska Sweet & Salty Biscuits",
+        "tags": [
+            "britannia 5050",
+            "maska chaska",
+            "sweet and salty",
+            "tea time snacks",
+            "savory biscuits",
+            "crunchy snacks"
+        ],
+        "category": "Grocery",
+        "productType": "Snack"
+    },
+    {
+        "title": "Britannia NutriChoice Seeds Biscuit",
+        "tags": [
+            "nutrichoice seeds",
+            "healthy biscuits",
+            "multigrain seeds",
+            "britannia biscuits",
+            "fiber rich",
+            "high protein snack"
+        ],
+        "category": "Grocery",
+        "productType": "Snack"
+    },
+    {
+        "title": "Britannia NutriChoice Digestive Zero Biscuit",
+        "tags": [
+            "digestive zero",
+            "sugar free biscuits",
+            "high fiber",
+            "britannia nutrichoice",
+            "no added sugar",
+            "healthy digestive"
+        ],
+        "category": "Grocery",
+        "productType": "Snack"
+    },
+    {
+        "title": "Noise VS401 TWS Earbuds (Black)",
+        "tags": [
+            "wireless earphones",
+            "earphones",
+            "noise buds vs401",
+            "gaming earbuds",
+            "50h playtime",
+            "enc quad mic"
+        ],
+        "category": "Electronics",
+        "productType": "Audio Devices"
+    },
+    {
+        "title": "boAt Airdopes 170 TWS Earbuds (Tranquil Blue)",
+        "tags": [
+            "boat airdopes 170",
+            "50h playtime",
+            "beast mode gaming",
+            "quad mic enx",
+            "asap charge",
+            "tranquil blue earbuds"
+        ],
+        "category": "Electronics",
+        "productType": "Audio Devices"
+    },
+    {
+        "title": "boAt Stone 1200 Bluetooth Speaker (14W, Black)",
+        "tags": [
+            "boat stone 1200",
+            "14w stereo sound",
+            "rgb led lights",
+            "ipx7 waterproof",
+            "9h playback",
+            "tws feature"
+        ],
+        "category": "Electronics",
+        "productType": "Audio Devices"
+    },
+    {
+        "title": "boAt Stone 1200 Bluetooth Speaker (14W, Black)",
+        "tags": [
+            "boat stone 1200",
+            "14w stereo sound",
+            "rgb led lights",
+            "ipx7 waterproof",
+            "9h playback",
+            "tws feature"
+        ],
+        "category": "Electronics",
+        "productType": "Audio Devices"
+    },
+    {
+        "title": "SanDisk iXpand Flip 256 GB Flash Drive (Green)",
+        "tags": [
+            "ixpand flip 256gb",
+            "lightning and usb a",
+            "iphone storage expander",
+            "automatic backup",
+            "sandisk flash drive",
+            "sea green pendrive"
+        ],
+        "category": "Electronics",
+        "productType": "Electronic Accessories"
+    },
+    {
+        "title": "Goldmedal I-Link 16A 3 Pin Multi Plug",
+        "tags": [
+            "goldmedal i-link",
+            "16a multi plug",
+            "universal travel adaptor",
+            "high voltage plug",
+            "3 pin multiplug",
+            "heavy appliance adaptor"
+        ],
+        "category": "Electronics",
+        "productType": "Power & Electrical"
+    },
+    {
+        "title": "Goldmedal Krysta 2 Pin Extension Cord With 5M Extension Cable (5 m)",
+        "tags": [
+            "goldmedal krysta",
+            "5m extension cord",
+            "3 socket flex box",
+            "master switch indicator",
+            "ultra smooth rotation",
+            "home and office use"
+        ],
+        "category": "Electronics",
+        "productType": "Electronic Accessories"
+    },
+    {
+        "title": "TP-LINK Nano Wireless Wi-Fi USB Adapter (150Mbps)",
+        "tags": [
+            "tp-link tl-wn725n",
+            "150mbps wifi dongle",
+            "nano usb adapter",
+            "plug and forget",
+            "softap mode",
+            "wireless n receiver"
+        ],
+        "category": "Electronics",
+        "productType": "Electronic Accessories"
+    },
+    {
+        "title": "Halonix Astron Plus 4.9W E27 LED Bulb (Warm White)",
+        "tags": [
+            "halonix astron plus",
+            "4.9w led bulb",
+            "e27 screw base",
+            "warm white light",
+            "energy saving bulb",
+            "retrofit led"
+        ],
+        "category": "Electronics",
+        "productType": "Power & Electrical"
+    },
+    {
+        "title": "Halonix Inverter 8.5W B22 LED Bulb",
+        "tags": [
+            "halonix inverter bulb",
+            "8.5w emergency light",
+            "4h backup battery",
+            "b22 base led",
+            "automatic charging",
+            "rechargeable bulb"
+        ],
+        "category": "Electronics",
+        "productType": "Power & Electrical"
+    },
+    {
+        "title": "Orient Electric High Glo 15W B22d LED Bulb (White)",
+        "tags": [
+            "orient high glo",
+            "15w led bulb",
+            "b22d base light",
+            "1500 lumens",
+            "4kv surge protection",
+            "180 degree beam"
+        ],
+        "category": "Electronics",
+        "productType": "Power & Electrical"
+    },
+    {
+        "title": "Man Matters Nourish Biotin Hair Supplement Gummies",
+        "tags": [
+            "biotin gummies",
+            "hair growth supplement",
+            "dht blocker",
+            "zinc and vitamin e",
+            "sugar free gummies",
+            "hair fall control"
+        ],
+        "category": "Beauty & Personal Care",
+        "productType": "Haircare"
+    },
+    {
+        "title": "Himalaya Wellness Neem Skin Supplement",
+        "tags": [
+            "himalaya neem",
+            "blood purifier",
+            "acne control",
+            "herbal skin supplement",
+            "detoxifying neem",
+            "natural glow"
+        ],
+        "category": "Beauty & Personal Care",
+        "productType": "Skincare"
+    },
+    {
+        "title": "Centrum Strawberry Flavour Healthy Hair Biotin+ Gummies (for Men & Women)",
+        "tags": [
+            "centrum biotin gummies",
+            "hair skin and nails",
+            "100% rda biotin",
+            "amla extract",
+            "strawberry flavored gummies",
+            "vegetarian hair supplement"
+        ],
+        "category": "Beauty & Personal Care",
+        "productType": "Haircare"
+    },
+    {
+        "title": "BPL Fingertip Pulse Oximeter (Oxy O2)",
+        "tags": [
+            "bpl oxy o2",
+            "fingertip pulse oximeter",
+            "spo2 and pulse monitor",
+            "perfusion index display",
+            "oled screen oximeter",
+            "portable health monitor"
+        ],
+        "category": "Beauty & Personal Care",
+        "productType": "Personal Hygiene"
+    },
+    {
+        "title": "Vicks VapoRub Chest Rubs & Balms",
+        "tags": [
+            "vicks vaporub",
+            "cold and cough relief",
+            "nasal decongestant",
+            "menthol and eucalyptus",
+            "steam inhalation",
+            "ayurvedic balm"
+        ],
+        "category": "Beauty & Personal Care",
+        "productType": "Personal Hygiene"
+    },
+    {
+        "title": "Vicks Inhaler (Instant Relief From Blocked Nose)",
+        "tags": [
+            "vicks inhaler",
+            "nasal stick",
+            "blocked nose relief",
+            "menthol inhaler",
+            "on-the-go cold relief",
+            "ayurvedic nasal inhaler"
+        ],
+        "category": "Beauty & Personal Care",
+        "productType": "Personal Hygiene"
+    },
+    {
+        "title": "Eno Regular Digestive Antacid",
+        "tags": [
+            "eno regular",
+            "fruit salt antacid",
+            "6 second relief",
+            "acidity treatment",
+            "heartburn relief"
+        ],
+        "category": "Beauty & Personal Care",
+        "productType": "Personal Hygiene"
+    },
+    {
+        "title": "Himalaya Wellness Hadjod Bone & Joint Wellness Tablet",
+        "tags": [
+            "himalaya hadjod",
+            "bone healing supplement",
+            "fracture recovery",
+            "joint wellness",
+            "cissus quadrangularis",
+            "ayurvedic bone care"
+        ],
+        "category": "Beauty & Personal Care",
+        "productType": "Personal Hygiene"
+    },
+    {
+        "title": "Pedigree Adult Wet Dog Food - Chicken & Liver Chunks in Gravy",
+        "tags": [
+            "dog food",
+            "adult wet dog food",
+            "gravy dog food",
+            "complete balanced nutrition",
+            "high moisture dog food",
+            "fussy eater dog food"
+        ],
+        "category": "Pet Care",
+        "productType": "Pet Food"
+    },
+    {
+        "title": "Drools Chicken and Egg Puppy Dry Dog Food (1.2 kg)",
+        "tags": [
+            "drools puppy food",
+            "real chicken and egg",
+            "dha for brain development",
+            "omega 3 and 6 fatty acids",
+            "digestive health",
+            "high protein puppy diet"
+        ],
+        "category": "Pet Care",
+        "productType": "Pet Food"
+    },
+    {
+        "title": "Pedigree Biscrok (Above 4 months) - Chicken Flavour Dog Biscuit",
+        "tags": [
+            "pedigree biscrok chicken",
+            "dog training treats",
+            "bone shaped biscuits",
+            "calcium for strong bones",
+            "protein rich snacks",
+            "omega fatty acids"
+        ],
+        "category": "Pet Care",
+        "productType": "Pet Food"
+    },
+    {
+        "title": "Hikari Cichlid Gold Sinking Medium Pellet Fish Food",
+        "tags": [
+            "hikari cichlid gold",
+            "sinking fish pellets",
+            "color enhancing food",
+            "high protein diet",
+            "medium pellet size",
+            "cichlid nutrition"
+        ],
+        "category": "Pet Care",
+        "productType": "Pet Food"
+    },
+    {
+        "title": "Petcrux Premium Pellet Turtle Food",
+        "tags": [
+            "turtle food",
+            "probiotic enhanced formula",
+            "shell development",
+            "calcium and vitamin d3",
+            "all life stages",
+            "easy to digest pellets"
+        ],
+        "category": "Pet Care",
+        "productType": "Pet Food"
+    },
+    {
+        "title": "Whiskas Kitten Wet Cat Food - Chicken in Gravy (2-12 Months)",
+        "tags": [
+            "cat food",
+            "chicken in gravy",
+            "dha for brain development",
+            "omega 6 and zinc",
+            "complete balanced nutrition",
+            "high moisture cat food"
+        ],
+        "category": "Pet Care",
+        "productType": "Pet Food"
+    }
+]

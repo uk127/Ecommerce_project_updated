@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const ErrorHandler = require("./middleware/error");
 const connectDatabase = require("./db/Database");
 const app = express();
@@ -21,6 +22,37 @@ connectDatabase();
 const server = app.listen(process.env.PORT, () => {
   console.log(`Server is running on http://localhost:${process.env.PORT}`);
 });
+
+// Setup Change Streams after MongoDB connection is established
+mongoose.connection.once("open", () => {
+  console.log("[Server] MongoDB connection established, setting up Change Streams...");
+  
+  // Import setupChangeStreams for incremental clustering
+  const { setupChangeStreams } = require("./utils/changeStreams");
+  setupChangeStreams();
+});
+
+// Handle graceful shutdown - close change streams before exit
+const gracefulShutdown = async () => {
+  console.log("[Server] Shutting down gracefully...");
+  
+  try {
+    const { closeChangeStreams } = require("./utils/changeStreams");
+    await closeChangeStreams();
+    console.log("[Server] Change streams closed");
+  } catch (error) {
+    console.error("[Server] Error closing change streams:", error.message);
+  }
+  
+  mongoose.connection.close(false);
+  server.close(() => {
+    console.log("[Server] Server closed");
+    process.exit(0);
+  });
+};
+
+process.on("SIGINT", gracefulShutdown);
+process.on("SIGTERM", gracefulShutdown);
 
 // middlewares
 // Express 5 has built-in body parsing, no need for body-parser
@@ -61,6 +93,9 @@ const aiAssistant = require("./controller/aiAssistant");
 const cart = require("./controller/cart");
 const activityRoutes = require("./routes/activityRoutes");
 const recommendationRoutes = require("./routes/recommendationRoutes");
+const clusteringRoutes = require("./routes/clusteringRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
+
 app.use("/api/v2/withdraw", withdraw);
 
 // end points
@@ -77,6 +112,8 @@ app.use("/api/v2/ai-assistant", aiAssistant);
 app.use("/api/v2/cart", cart);
 app.use("/api/v2/activity", activityRoutes);
 app.use("/api/v2/recommendations", recommendationRoutes);
+app.use("/api/v2/clustering", clusteringRoutes);
+app.use("/api/v2/analytics", analyticsRoutes);
 
 // it'for errhendel
 app.use(ErrorHandler);

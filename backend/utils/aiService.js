@@ -171,7 +171,7 @@ async function getAIIntent(userMessage) {
     const response = await axios.post(
       OPENROUTER_API_URL,
       {
-        model: "openai/gpt-3.5-turbo", // You can change to other models like "anthropic/claude-3-haiku"
+        model: "meta-llama/llama-3.3-70b-instruct:free", // You can change to other models like "anthropic/claude-3-haiku"
         messages: [
           {
             role: "system",
