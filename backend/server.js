@@ -95,8 +95,11 @@ const activityRoutes = require("./routes/activityRoutes");
 const recommendationRoutes = require("./routes/recommendationRoutes");
 const clusteringRoutes = require("./routes/clusteringRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const aiRoutes = require("./routes/aiRoutes");
+const sellerAiChat = require("./routes/chat");
 
 app.use("/api/v2/withdraw", withdraw);
+app.use("/api/seller-ai", sellerAiChat);
 
 // end points
 app.use("/api/v2/user", user);
@@ -114,6 +117,9 @@ app.use("/api/v2/activity", activityRoutes);
 app.use("/api/v2/recommendations", recommendationRoutes);
 app.use("/api/v2/clustering", clusteringRoutes);
 app.use("/api/v2/analytics", analyticsRoutes);
+
+// ai assistant route specifically for sellers
+app.use("/api/ai", aiRoutes);
 
 // it'for errhendel
 app.use(ErrorHandler);

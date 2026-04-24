@@ -19,8 +19,14 @@ import { toast } from "react-toastify";
 import Ratings from "./Ratings";
 import axios from "axios";
 import useActivity from "../../hooks/useActivity";
+import { useLocation, useParams } from "react-router-dom";
+
+
 
 const ProductDetails = ({ data }) => {
+
+
+
   const { products } = useSelector((state) => state.products);
   const { user, isAuthenticated } = useSelector((state) => state.user);
   const { wishlist } = useSelector((state) => state.wishlist);
@@ -32,6 +38,13 @@ const ProductDetails = ({ data }) => {
   const [click, setClick] = useState(false);
   const [select, setSelect] = useState(0);
   const navigate = useNavigate();
+
+  useEffect(() => {
+  setSelect(0);
+  setCount(1);
+  setClick(false);
+}, [data?._id]);
+
 
   useEffect(() => {
     dispatch(getAllProductsShop(data && data?.shop._id));
@@ -134,7 +147,7 @@ const ProductDetails = ({ data }) => {
             <div className="block w-full 800px:flex">
               <div className="w-full 800px:w-[50%]">
                 <img
-                  src={getImageUrl(data && data.images[select])}
+                  src={getImageUrl(data?.images?.[select])}
                   alt=""
                   className="w-[80%]"
                 />
@@ -142,9 +155,8 @@ const ProductDetails = ({ data }) => {
                   {data &&
                     data.images.map((i, index) => (
                       <div
-                        className={`${
-                          select === 0 ? "border" : "null"
-                        } cursor-pointer`}
+                        className={`${select === 0 ? "border" : "null"
+                          } cursor-pointer`}
                       >
                         <img
                           src={getImageUrl(i)}
@@ -155,9 +167,8 @@ const ProductDetails = ({ data }) => {
                       </div>
                     ))}
                   <div
-                    className={`${
-                      select === 1 ? "border" : "null"
-                    } cursor-pointer `}
+                    className={`${select === 1 ? "border" : "null"
+                      } cursor-pointer `}
                   >
                     {/* <img
                                             src={data?.image_Url[1].url}

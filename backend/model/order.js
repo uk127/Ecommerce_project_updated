@@ -46,3 +46,8 @@ const orderSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model("Order", orderSchema);
+
+// Indexes for Seller AI performance
+orderSchema.index({ createdAt: 1 });
+orderSchema.index({ "cart.shopId": 1 });
+orderSchema.index({ createdAt: 1, "cart.shopId": 1 });

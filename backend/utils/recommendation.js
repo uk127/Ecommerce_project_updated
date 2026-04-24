@@ -337,8 +337,8 @@ async function getHomeRecommendations(userId, totalItems = DEFAULT_RECOMMENDATIO
     const sortedCategories = Object.entries(categoryScores)
       .sort((a, b) => b[1] - a[1]);
 
-    console.log("Sorted productTypes by preference:", sortedProductTypes);
-    console.log("Sorted categories by preference:", sortedCategories);
+    // console.log("Sorted productTypes by preference:", sortedProductTypes);
+    // console.log("Sorted categories by preference:", sortedCategories);
 
     // Get top productType and its category
     let topProductType = null;

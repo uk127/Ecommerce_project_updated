@@ -14,19 +14,45 @@ const AIAssistant = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { cart } = useSelector((state) => state.cart);
-  
+  const { user } = useSelector((state) => state.user) || {};
+  const { isSeller, seller } = useSelector((state) => state.seller) || {};
+
+  const [receivedProducts, setReceivedProducts] = useState([]);
+
+  let role = "customer";
+  let sellerId = null;
+
+  if (user && user?.role === "Admin") {
+    role = "admin";
+  } else if (isSeller && seller) {
+    role = "seller";
+    sellerId = seller._id;
+  }
+
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      text: "Hello! I'm your AI Shopkeeper. I can help you find products, check prices, manage your cart, and more. How can I help you today?",
-      sender: "ai",
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    let greeting = "Hello Customer! I'm your AI Shopkeeper. I can help you find products, check prices, suggest items based on tags (e.g., healthy, budget, snacks), manage your cart, and more.";
+    if (role === "seller") {
+      greeting = "Hello Seller! I'm your AI Assistant. I can provide analytics insights, show sales data, top products, low stock items, and help classify products.";
+    } else if (role === "admin") {
+      greeting = "Hello Admin! I'm your AI Assistant. I can provide platform-level analytics, monitor sellers performance, identify top categories, and detect low-performing items.";
+    }
+
+    setMessages([
+      {
+        id: 1,
+        text: greeting,
+        sender: "ai",
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      },
+    ]);
+  }, [role]);
+
   const [inputValue, setInputValue] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -57,7 +83,7 @@ const AIAssistant = () => {
   // Initialize Speech Recognition
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
+
     if (!SpeechRecognition) {
       console.warn("Speech Recognition not supported in this browser");
       setVoiceSupported(false);
@@ -76,7 +102,7 @@ const AIAssistant = () => {
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
       setInputValue(transcript);
-      
+
       setTimeout(() => {
         if (transcript.trim()) {
           sendMessage(transcript.trim());
@@ -108,9 +134,23 @@ const AIAssistant = () => {
       return;
     }
 
+
+    // 🧹 CLEAN TEXT BEFORE SPEAKING
+    const cleanText = text
+      // remove markdown images
+      .replace(/!\[.*?\]\(.*?\)/g, "")
+      // remove raw URLs
+      .replace(/https?:\/\/\S+/g, "")
+      // remove markdown formatting
+      .replace(/\*\*/g, "")
+      .replace(/###/g, "")
+      // fix spacing
+      .replace(/\s+/g, " ")
+      .trim();
+
     window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = "en-US";
     utterance.rate = 1;
     utterance.pitch = 1;
@@ -135,7 +175,7 @@ const AIAssistant = () => {
   const addToReduxCart = useCallback((productData) => {
     // Check if product already in cart
     const existingItem = cart.find((item) => item._id === productData._id);
-    
+
     const cartItem = {
       _id: productData._id,
       name: productData.name,
@@ -211,6 +251,9 @@ const AIAssistant = () => {
     try {
       const response = await axios.post(`${server}/ai-assistant/chat`, {
         message: text.trim(),
+        role: role,
+        sellerId: sellerId,
+        userId: user?._id,   // 🔥 ADD THIS
       });
 
       if (response.data.success) {
@@ -225,7 +268,10 @@ const AIAssistant = () => {
           intent: response.data.intent,
           data: response.data.data,
         };
-
+        console.log("response", response);
+        console.log("response.data", response.data);
+        setReceivedProducts(response.data.data.products);
+        console.log("response.data.data.products", response.data.data.products);
         // Handle cart operations with Redux
         if (response.data.intent === "AddToCart" && response.data.data?.products) {
           // Products are returned from backend with full details
@@ -252,11 +298,11 @@ const AIAssistant = () => {
             const result = removeFromReduxCartByName(item.productName);
             removalResults.push(result);
           });
-          
+
           // Update the message based on actual removal results
           const successRemovals = removalResults.filter(r => r.success);
           const failedRemovals = removalResults.filter(r => !r.success);
-          
+
           if (successRemovals.length > 0 && failedRemovals.length === 0) {
             // All successful - update message with success
             const removedNames = successRemovals.map(r => r.name).join(", ");
@@ -281,7 +327,7 @@ const AIAssistant = () => {
       }
     } catch (error) {
       console.error("Error sending message:", error);
-      
+
       const errorResponse = {
         id: Date.now() + 1,
         text: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
@@ -296,7 +342,7 @@ const AIAssistant = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [speakText, addToReduxCart, removeFromReduxCartByName]);
+  }, [speakText, addToReduxCart, removeFromReduxCartByName, role, sellerId]);
 
   const handleSendMessage = () => {
     if (inputValue.trim() === "" || isLoading) return;
@@ -321,7 +367,7 @@ const AIAssistant = () => {
     } else {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
-      
+
       try {
         recognitionRef.current.start();
       } catch (error) {
@@ -415,7 +461,7 @@ const AIAssistant = () => {
         const cartItems = cart || [];
         const cartTotal = cartItems.reduce((sum, item) => sum + (item.discountPrice * item.qty), 0);
         const itemCount = cartItems.reduce((sum, item) => sum + item.qty, 0);
-        
+
         return (
           <div className="mt-2">
             {cartItems.length === 0 ? (
@@ -535,7 +581,7 @@ const AIAssistant = () => {
                 </p>
               </div>
             )}
-            
+
             {/* Available Products */}
             {message.data.availableProducts && message.data.availableProducts.length > 0 && (
               <div className="mb-2">
@@ -578,7 +624,7 @@ const AIAssistant = () => {
                     </div>
                   </div>
                 ))}
-                
+
                 {/* Add All to Cart Button */}
                 {message.data.availableProducts.length > 1 && (
                   <button
@@ -606,7 +652,7 @@ const AIAssistant = () => {
                 )}
               </div>
             )}
-            
+
             {/* Not Available Items */}
             {message.data.notFound && message.data.notFound.length > 0 && (
               <div className="bg-red-50 rounded-lg p-2 border border-red-200">
@@ -614,6 +660,120 @@ const AIAssistant = () => {
                 <p className="text-xs text-gray-600">{message.data.notFound.join(", ")}</p>
               </div>
             )}
+          </div>
+        );
+
+      case "SellerSalesData":
+        return (
+          <div className="mt-2 bg-blue-50 rounded-lg p-3 border border-blue-100">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="p-2 bg-white rounded shadow-sm">
+                <p className="text-gray-500 text-xs">Total Revenue</p>
+                <p className="font-bold text-blue-600">₹{message.data.totalRevenue}</p>
+              </div>
+              <div className="p-2 bg-white rounded shadow-sm">
+                <p className="text-gray-500 text-xs">Total Orders</p>
+                <p className="font-bold text-blue-600">{message.data.totalOrders}</p>
+              </div>
+              <div className="p-2 bg-white rounded shadow-sm">
+                <p className="text-gray-500 text-xs">Today's Sales</p>
+                <p className="font-bold text-blue-600">₹{message.data.todaySales}</p>
+              </div>
+              <div className="p-2 bg-white rounded shadow-sm">
+                <p className="text-gray-500 text-xs">Week's Sales</p>
+                <p className="font-bold text-blue-600">₹{message.data.weekSales}</p>
+              </div>
+              <div className="p-2 bg-white rounded shadow-sm">
+                <p className="text-gray-500 text-xs">Month's Sales</p>
+                <p className="font-bold text-blue-600">₹{message.data.monthSales}</p>
+              </div>
+              <div className="p-2 bg-white rounded shadow-sm">
+                <p className="text-gray-500 text-xs">Avg Order Value</p>
+                <p className="font-bold text-blue-600">₹{message.data.averageOrderValue}</p>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "AdminPlatformRevenue":
+        return (
+          <div className="mt-2 bg-purple-50 rounded-lg p-3 border border-purple-100">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="p-2 bg-white rounded shadow-sm">
+                <p className="text-gray-500 text-xs">Today's Revenue</p>
+                <p className="font-bold text-purple-600">₹{message.data.totalRevenueToday}</p>
+              </div>
+              <div className="p-2 bg-white rounded shadow-sm">
+                <p className="text-gray-500 text-xs">Active Sellers</p>
+                <p className="font-bold text-purple-600">{message.data.activeSellers}</p>
+              </div>
+              <div className="p-2 bg-white rounded shadow-sm">
+                <p className="text-gray-500 text-xs">Total Users</p>
+                <p className="font-bold text-purple-600">{message.data.totalUsers}</p>
+              </div>
+              <div className="p-2 bg-white rounded shadow-sm">
+                <p className="text-gray-500 text-xs">Today's Orders</p>
+                <p className="font-bold text-purple-600">{message.data.totalOrdersToday}</p>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "SellerTopProducts":
+      case "SellerInventoryAlert":
+      case "AdminLowPerforming":
+        return (
+          <div className="mt-2">
+            {(message.data.products || message.data.lowStockItems)?.map((item, i) => (
+              <div key={i} className="bg-orange-50 rounded-lg p-3 mb-2 border border-orange-100">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-800 text-sm">{item.name}</span>
+                  <div className="text-right">
+                    {item.price && <p className="font-bold text-orange-600 text-sm">₹{item.price}</p>}
+                    <p className={`text-xs ${item.stock < 10 || item.currentStock < 10 ? 'text-red-500' : 'text-green-600'}`}>
+                      Stock: {item.stock !== undefined ? item.stock : item.currentStock}
+                    </p>
+                    {item.soldCount !== undefined && <p className="text-xs text-gray-500">Sold: {item.soldCount}</p>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+
+      case "AdminSellerPerformance":
+        return (
+          <div className="mt-2">
+            {message.data.topSellers?.map((seller, i) => (
+              <div key={i} className="bg-indigo-50 rounded-lg p-3 mb-2 border border-indigo-100">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-800 text-sm">{i + 1}. {seller.name}</span>
+                  <span className="font-bold text-indigo-600 text-sm">₹{seller.revenue}</span>
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>Orders: {seller.orders}</span>
+                  <span className="flex items-center gap-1"><BsStar className="text-yellow-400" />{seller.rating}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+
+      case "AdminTopCategories":
+        return (
+          <div className="mt-2">
+            {message.data.categories?.map((cat, i) => (
+              <div key={i} className="bg-teal-50 rounded-lg p-3 mb-2 border border-teal-100">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-800 text-sm">{cat.name}</span>
+                  <span className="font-bold text-teal-600 text-sm">₹{cat.revenue}</span>
+                </div>
+                <div className="flex justify-between text-xs mt-1">
+                  <span className="text-gray-500">Orders: {cat.orders}</span>
+                  <span className="text-green-600 font-medium">{cat.growth}</span>
+                </div>
+              </div>
+            ))}
           </div>
         );
 
@@ -625,7 +785,7 @@ const AIAssistant = () => {
   // Intent badge
   const getIntentBadge = (intent) => {
     if (!intent || intent === "Unknown") return null;
-    
+
     const intentColors = {
       AddToCart: "bg-green-100 text-green-700",
       RemoveFromCart: "bg-red-100 text-red-700",
@@ -638,12 +798,23 @@ const AIAssistant = () => {
       AutoSearch: "bg-cyan-100 text-cyan-700",
       Payment: "bg-emerald-100 text-emerald-700",
       RecipeIngredients: "bg-amber-100 text-amber-700",
+      SellerSalesData: "bg-blue-100 text-blue-700",
+      AdminPlatformRevenue: "bg-purple-100 text-purple-700",
+      SellerTopProducts: "bg-orange-100 text-orange-700",
+      SellerInventoryAlert: "bg-red-100 text-red-700",
+      SellerProductClassification: "bg-cyan-100 text-cyan-700",
+      SellerPricingAdvice: "bg-emerald-100 text-emerald-700",
+      AdminSellerPerformance: "bg-indigo-100 text-indigo-700",
+      AdminTopCategories: "bg-teal-100 text-teal-700",
+      AdminLowPerforming: "bg-red-100 text-red-700"
     };
 
     const intentIcons = {
       AddToCart: <AiOutlineShoppingCart className="text-xs" />,
       PopularProducts: <IoMdTrendingUp className="text-xs" />,
       RecipeIngredients: <span className="text-xs">🍳</span>,
+      SellerSalesData: <IoMdTrendingUp className="text-xs" />,
+      AdminPlatformRevenue: <IoMdTrendingUp className="text-xs" />
     };
 
     return (
@@ -654,15 +825,118 @@ const AIAssistant = () => {
     );
   };
 
+  // Parse markdown bold, newlines, and ### bold sentences
+  const formatMessageText = (text, isUser, products = []) => {
+    if (!text) return null;
+
+    return text.split('\n').map((line, lineIndex) => {
+      // Handle empty lines and ### bold sentences
+      if (!line?.trim()) return <br key={`br-${lineIndex}`} />;
+
+      // Check for ### bold sentence (entire line)
+      if (line.trim().startsWith('### ')) {
+        const boldContent = line.trim().slice(4); // Remove '### '
+        return (
+          <strong
+            key={`bold-line-${lineIndex}`}
+            className={`font-semibold block mb-1 last:mb-0 ${isUser ? 'text-white font-bold' : 'text-gray-900 bg-orange-50/50 px-2 py-1 rounded'}`}
+          >
+            {boldContent}
+          </strong>
+        );
+      }
+      const imageMatches = [...line.matchAll(/!\[.*?\]\((.*?)\)/g)];
+
+      const cleanLine = line.replace(/!\[.*?\]\(.*?\)/g, "");
+
+      const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
+
+      return (
+        <span key={`line-${lineIndex}`} className="block mb-1 last:mb-0">
+          {parts.map((part, partIndex) => {
+
+            // 🖼️ IMAGE HANDLING
+            // const imageMatch = part.match(/!\[.*?\]\((.*?)\)/);
+            // // Remove image markdown from text
+            // const cleanLine = line.replace(/!\[.*?\]\(.*?\)/g, "");
+
+            // if (imageMatch) {
+            //   const imageUrl = imageMatch[1];
+
+            //   return (
+            //     <img
+            //       key={partIndex}
+            //       src={imageUrl}
+            //       alt="product"
+            //       className="mt-2 rounded-lg w-40 h-40 object-cover border"
+            //     />
+            //   );
+            // }
+            if (part.startsWith('**') && part.endsWith('**')) {
+              // Extract the text inside **
+              const boldText = part.slice(2, -2);
+              return (
+                <strong
+                  key={partIndex}
+                  className={`font-semibold ${isUser ? 'text-white font-bold' : 'text-gray-900 bg-orange-50/50 px-1 rounded'}`}
+                >
+                  {boldText}
+                </strong>
+              );
+            }
+            return <span key={partIndex}>{part}</span>;
+          })}
+
+
+          {/* 🖼️ IMAGES (separate) */}
+          {imageMatches.map((match, i) => {
+            const imageUrl = match[1];
+
+            const product = products.find(
+              (p) => p.image === imageUrl
+            );
+
+            return (
+              <div>
+                <img
+                  key={i}
+                  src={imageUrl}
+                  className="cursor-pointer w-32 h-32 object-cover rounded-xl"
+                  onClick={() => {
+                    if (product?.productId) {
+                      navigate(`/product/${product.productId}`, {
+                        state: product
+                      });
+                    }
+                  }}
+                />
+                <button className="bg-green-600 text-white px-3 py-1 rounded mt-2" onClick={() => {
+                  addToReduxCart({
+                    _id: product.productId,
+                    name: product.name,
+                    discountPrice: product.formattedPrice,
+                    originalPrice: product.originalPrice,
+                    qty: 1,
+                    stock: product.stock,
+                    images: [product.image],
+                  });
+                }}>Add to Cart</button>
+              </div>
+            );
+          })}
+        </span>
+      );
+    });
+  };
+
   return (
     <div className="fixed bottom-6 right-6 z-50">
       {/* Chat Window */}
       <div
-        className={`absolute bottom-16 right-0 w-[340px] sm:w-[400px] bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ease-in-out origin-bottom-right ${
-          isOpen
-            ? "opacity-100 scale-100 translate-y-0"
-            : "opacity-0 scale-95 translate-y-4 pointer-events-none"
-        }`}
+        className={`absolute bottom-16 right-0 w-[340px] sm:w-[400px] bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ease-in-out origin-bottom-right ${isOpen
+          ? "opacity-100 scale-100 translate-y-0"
+          : "opacity-0 scale-95 translate-y-4 pointer-events-none"
+          }`}
         style={{
           maxHeight: "580px",
           boxShadow: "0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 25px rgba(0, 0, 0, 0.1)",
@@ -710,17 +984,17 @@ const AIAssistant = () => {
                 <div className="mb-1">{getIntentBadge(message.intent)}</div>
               )}
               <div
-                className={`max-w-[90%] ${
-                  message.sender === "user"
-                    ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-2xl rounded-br-md"
-                    : "bg-white border border-orange-100 text-gray-700 rounded-2xl rounded-bl-md shadow-sm"
-                } px-4 py-3`}
+                className={`max-w-[90%] ${message.sender === "user"
+                  ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-2xl rounded-br-md"
+                  : "bg-white border border-orange-100 text-gray-700 rounded-2xl rounded-bl-md shadow-sm"
+                  } px-4 py-3`}
               >
-                <p className="text-sm leading-relaxed">{message.text}</p>
+                <div className="text-sm leading-relaxed">
+                  {formatMessageText(message.text, message.sender === "user", receivedProducts)}
+                </div>
                 <p
-                  className={`text-[10px] mt-1 ${
-                    message.sender === "user" ? "text-white/70" : "text-gray-400"
-                  }`}
+                  className={`text-[10px] mt-1 ${message.sender === "user" ? "text-white/70" : "text-gray-400"
+                    }`}
                 >
                   {message.timestamp}
                 </p>
@@ -728,7 +1002,7 @@ const AIAssistant = () => {
               </div>
             </div>
           ))}
-          
+
           {/* Loading indicator */}
           {isLoading && (
             <div className="flex justify-start mb-4">
@@ -741,7 +1015,7 @@ const AIAssistant = () => {
               </div>
             </div>
           )}
-          
+
           <div ref={messagesEndRef} />
         </div>
 
@@ -752,13 +1026,12 @@ const AIAssistant = () => {
             <button
               onClick={handleVoiceInput}
               disabled={!voiceSupported || isLoading}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
-                !voiceSupported
-                  ? "bg-gray-100 text-gray-300 cursor-not-allowed"
-                  : isListening
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${!voiceSupported
+                ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                : isListening
                   ? "bg-red-500 text-white animate-pulse"
                   : "bg-orange-100 text-orange-500 hover:bg-orange-200"
-              }`}
+                }`}
               aria-label="Voice input"
               title={voiceSupported ? "Click to speak" : "Voice not supported"}
             >
@@ -775,9 +1048,8 @@ const AIAssistant = () => {
                 onKeyPress={handleKeyPress}
                 placeholder={isListening ? "Listening..." : isLoading ? "Processing..." : "Ask about products, prices, cart..."}
                 disabled={isListening || isLoading}
-                className={`w-full px-4 py-2.5 bg-orange-50 border border-orange-100 rounded-full text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100 transition-all ${
-                  isListening || isLoading ? "opacity-70" : ""
-                }`}
+                className={`w-full px-4 py-2.5 bg-orange-50 border border-orange-100 rounded-full text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100 transition-all ${isListening || isLoading ? "opacity-70" : ""
+                  }`}
               />
             </div>
 
@@ -785,17 +1057,16 @@ const AIAssistant = () => {
             <button
               onClick={handleSendMessage}
               disabled={inputValue.trim() === "" || isLoading || isListening}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
-                inputValue.trim() === "" || isLoading || isListening
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-orange-400 to-orange-500 text-white hover:shadow-lg hover:scale-105"
-              }`}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${inputValue.trim() === "" || isLoading || isListening
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-orange-400 to-orange-500 text-white hover:shadow-lg hover:scale-105"
+                }`}
               aria-label="Send message"
             >
               <AiOutlineSend className="text-lg" />
             </button>
           </div>
-          
+
           {/* Status indicators */}
           {isListening && (
             <div className="flex items-center justify-center gap-2 mt-2">
@@ -807,7 +1078,7 @@ const AIAssistant = () => {
               <p className="text-xs text-red-500 font-medium">Listening... Speak now!</p>
             </div>
           )}
-          
+
           {isSpeaking && !isListening && (
             <div className="flex items-center justify-center gap-2 mt-2">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
@@ -826,11 +1097,10 @@ const AIAssistant = () => {
           setIsOpen(!isOpen);
           if (isOpen) stopSpeaking();
         }}
-        className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 relative z-10 ${
-          isOpen
-            ? "bg-gray-600 hover:bg-gray-700"
-            : "bg-gradient-to-r from-orange-400 to-orange-500 hover:shadow-xl hover:scale-110"
-        }`}
+        className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 relative z-10 ${isOpen
+          ? "bg-gray-600 hover:bg-gray-700"
+          : "bg-gradient-to-r from-orange-400 to-orange-500 hover:shadow-xl hover:scale-110"
+          }`}
         style={{
           boxShadow: isOpen
             ? "0 4px 15px rgba(0, 0, 0, 0.2)"

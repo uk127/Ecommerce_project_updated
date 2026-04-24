@@ -56,7 +56,7 @@ import {
   AdminDashboardWithdraw,
 } from "./routes/AdminRoutes";
 
-import { ToastContainer} from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useEffect } from "react";
 import { loadSeller, loadUser } from "./redux/actions/user";
@@ -70,6 +70,7 @@ import axios from "axios";
 import { server } from "./server";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
+
 
 const App = () => {
   const [stripeApikey, setStripeApiKey] = useState("");
@@ -105,6 +106,7 @@ const App = () => {
       )}
 
       <Routes>
+        
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />

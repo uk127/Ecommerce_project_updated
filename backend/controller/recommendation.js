@@ -48,8 +48,8 @@ exports.getHomeScreenRecommendations = catchAsyncErrors(async (req, res, next) =
   const result = await getHomeRecommendations(userId, maxCount);
   const refinedRecommendations = await refineForUser(result.recommendations, userId);
 
-  console.log("result.recommendations->",result.recommendations);
-  console.log("refinedRecommendations------",refinedRecommendations);
+  // console.log("result.recommendations->",result.recommendations);
+  // console.log("refinedRecommendations------",refinedRecommendations);
 
   console.log("Recommendations found:", result.recommendations?.length || 0);
   console.log("Is personalized:", result.metadata?.isPersonalized);

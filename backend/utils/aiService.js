@@ -161,7 +161,7 @@ IMPORTANT:
  * @param {string} userMessage - The user's message
  * @returns {Promise<Object>} - Parsed JSON response with intent and extracted data
  */
-async function getAIIntent(userMessage) {
+async function getAIIntent(userMessage, role = "customer") {
   try {
     if (!OPENROUTER_API_KEY) {
       console.error("OpenRouter API key not configured");
@@ -171,7 +171,7 @@ async function getAIIntent(userMessage) {
     const response = await axios.post(
       OPENROUTER_API_URL,
       {
-        model: "meta-llama/llama-3.3-70b-instruct:free", // You can change to other models like "anthropic/claude-3-haiku"
+        model: "openrouter/free", // You can change to other models like "anthropic/claude-3-haiku"
         messages: [
           {
             role: "system",
