@@ -378,6 +378,16 @@ const get_recommendation_tool = tool(
         return JSON.stringify({
             currencySymbol: "₹",
             recommendations: products,
+            products: products.map((p) => ({
+                    productId: p._id,
+                    name: p.name,
+                    price: p.discountPrice,
+                    formattedPrice: `₹${p.discountPrice}`,
+                    originalPrice: p.originalPrice,
+                    image: p.images?.[0] || null,
+                    stock: p.stock,
+                    shopId: p.shopId,
+                })),
             message: "Recommended products",
         });
     },

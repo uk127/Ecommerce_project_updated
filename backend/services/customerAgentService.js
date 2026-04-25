@@ -6,12 +6,20 @@ const tools = require("./customerTools"); // 👈 separate tool file
 // -----------------------------
 // LLM (same as seller)
 // -----------------------------
+// const llm = new ChatOpenAI({
+//     model: "openai/gpt-4o-mini",
+//     temperature: 0,
+//     apiKey: process.env.OPENROUTER_API_KEY,
+//     configuration: {
+//         baseURL: "https://openrouter.ai/api/v1",
+//     },
+// });
 const llm = new ChatOpenAI({
     model: "openai/gpt-4o-mini",
     temperature: 0,
-    apiKey: process.env.OPENROUTER_API_KEY,
+    apiKey: process.env.AICREDITS_API_KEY,
     configuration: {
-        baseURL: "https://openrouter.ai/api/v1",
+        baseURL: "https://api.aicredits.in/v1",
     },
 });
 

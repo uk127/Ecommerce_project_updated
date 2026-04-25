@@ -24,6 +24,20 @@ const AIAssistant = () => {
 
   const [receivedProducts, setReceivedProducts] = useState([]);
 
+  // 🔊 GLOBAL AUDIO TOGGLE: persisted in localStorage (default ON)
+  const [isAudioEnabled, setIsAudioEnabled] = useState(() => {
+    const saved = localStorage.getItem("aiAudioEnabled");
+    return saved !== "false"; // default true
+  });
+
+  const toggleAudio = useCallback(() => {
+    setIsAudioEnabled((prev) => {
+      const next = !prev;
+      localStorage.setItem("aiAudioEnabled", next.toString());
+      return next;
+    });
+  }, []);
+
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "en"
   );
@@ -186,6 +200,9 @@ const AIAssistant = () => {
 
   // Text-to-Speech function
   const speakText = useCallback((text) => {
+    // 🚫 AUDIO DISABLED: skip browser speech synthesis when global audio toggle is OFF
+    if (!isAudioEnabled) return;
+
     if (!("speechSynthesis" in window)) {
       return;
     }
@@ -227,10 +244,13 @@ const AIAssistant = () => {
     utterance.onerror = () => setIsSpeaking(false);
 
     window.speechSynthesis.speak(utterance);
-  }, []);
+  }, [language, isAudioEnabled]);
 
   // 🔥 ADDED: ElevenLabs audio player
   const playAudioFromBase64 = (base64Audio) => {
+    // 🚫 AUDIO DISABLED: skip ElevenLabs/Sarvam base64 audio when global toggle is OFF
+    if (!isAudioEnabled) return;
+
     try {
       // stop previous audio
       if (audioRef.current) {
@@ -414,13 +434,16 @@ const AIAssistant = () => {
         // Add message to UI
         setMessages((prev) => [...prev, aiMessage]);
 
-        // 🔥 ADDED: Tamil → ElevenLabs audio
-        if (language === "ta" && response.data.audio) {
-          playAudioFromBase64(response.data.audio);
-        }
-        // 🔥 ADDED: English → browser TTS
-        else {
-          speakText(aiMessage.text);
+        // 🔊 AUDIO TOGGLE: only play AI voice when audio is enabled
+        if (isAudioEnabled) {
+          // 🔥 ADDED: Tamil → ElevenLabs audio
+          if (language === "ta" && response.data.audio) {
+            playAudioFromBase64(response.data.audio);
+          }
+          // 🔥 ADDED: English → browser TTS
+          else {
+            speakText(aiMessage.text);
+          }
         }
       } else {
         throw new Error("Failed to get response");
@@ -1051,6 +1074,8 @@ const AIAssistant = () => {
               isSpeaking={isSpeaking}
               isListening={isListening}
               isLoading={isLoading}
+              isAudioEnabled={isAudioEnabled}
+              onToggleAudio={toggleAudio}
               onClose={() => {
                 setIsOpen(false);
                 stopSpeaking();

@@ -2,9 +2,10 @@ import React from "react";
 import { AiOutlineClose } from "react-icons/ai";
 import { BsChatDots } from "react-icons/bs";
 import { FiSettings } from "react-icons/fi";
+import { HiOutlineVolumeUp, HiOutlineVolumeOff } from "react-icons/hi";
 import { useNavigate } from "react-router-dom";
 
-const ChatHeader = ({ isSpeaking, isListening, isLoading, onClose }) => {
+const ChatHeader = ({ isSpeaking, isListening, isLoading, isAudioEnabled, onToggleAudio, onClose }) => {
   const navigate = useNavigate();
 
   const handleSettingsClick = () => {
@@ -21,7 +22,7 @@ const ChatHeader = ({ isSpeaking, isListening, isLoading, onClose }) => {
           )}
         </div>
         <div>
-          <h3 className="text-white font-semibold text-lg">Anaachi AI</h3>
+          <h3 className="text-white font-semibold text-lg">Annachi AI</h3>
           <p className="text-white/80 text-xs">
             {isListening
               ? "🎤 Listening..."
@@ -35,6 +36,20 @@ const ChatHeader = ({ isSpeaking, isListening, isLoading, onClose }) => {
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Audio Toggle Button */}
+        <button
+          onClick={onToggleAudio}
+          className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center"
+          aria-label={isAudioEnabled ? "Mute AI voice" : "Unmute AI voice"}
+          title={isAudioEnabled ? "Mute AI voice" : "Unmute AI voice"}
+        >
+          {isAudioEnabled ? (
+            <HiOutlineVolumeUp className="text-white text-lg" />
+          ) : (
+            <HiOutlineVolumeOff className="text-white text-lg" />
+          )}
+        </button>
+
         {/* Settings Icon */}
         <button
           onClick={handleSettingsClick}
