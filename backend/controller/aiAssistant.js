@@ -9,6 +9,10 @@ const AICart = require("../model/aiCart");
 // const { handleIntent, getSalesSummary, getTopProducts, getLowStock } = require("../services/sellerService");
 const { executeSellerAgent } = require("../services/agentService");
 const { executeCustomerAgent } = require("../services/customerAgentService");
+
+const { refineQuery } = require("../services/refineQuery");
+
+const { textToSpeech } = require("../services/textToSpeech");
 /**
  * Main chat endpoint - handles all AI assistant interactions
  */
@@ -16,8 +20,9 @@ router.post(
   "/chat",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { message, sessionId, role, sellerId } = req.body;
+      const { message, sessionId, role, sellerId, language } = req.body;
       console.log("req.body", req.body);
+
       if (!message || message.trim() === "") {
         return next(new ErrorHandler("Message is required", 400));
       }
@@ -27,10 +32,16 @@ router.post(
       function generateSessionId() {
         return `ai_session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       }
-
       // Get or create session ID for cart management
       const cartSessionId = sessionId || generateSessionId();
 
+      // ONLY Tamil language triggers refine
+      let processedMessage = message;
+
+      if (language === "ta") {
+        processedMessage = await refineQuery(message);
+      }
+      console.log("processedMessage", processedMessage);
       // Step 1: ROLE BASED ACCESS CONTROL - STRICT SEPARATION
       let result = {};
 
@@ -38,7 +49,7 @@ router.post(
       if (role === "seller") {
         // Seller role: ONLY seller features allowed. Block ALL customer intents
         // result = await handleSellerQueries(message, sellerId);
-        const agentResult = await executeSellerAgent(message, sellerId);
+        const agentResult = await executeSellerAgent(processedMessage, sellerId);
         result = {
           success: true,
           message: agentResult.response,
@@ -47,14 +58,14 @@ router.post(
         };
       } else if (role === "admin") {
         // Admin role: ONLY admin features allowed. Block ALL customer intents
-        result = await handleAdminQueries(message);
+        result = await handleAdminQueries(processedMessage);
       } else {
         if (!req.body.userId) {
           return next(new ErrorHandler("userId is required for customer", 400));
         }
-        console.log("cartSessionId",cartSessionId);
+        console.log("cartSessionId", cartSessionId);
         // Default: Customer role behavior
-        const agentResult = await executeCustomerAgent(message, req.body.userId, cartSessionId);
+        const agentResult = await executeCustomerAgent(processedMessage, req.body.userId, cartSessionId);
 
         // result = {
         //   success: true,
@@ -62,8 +73,41 @@ router.post(
         //   intent: "CustomerQuery",
         //   data: null,
         // };
-        console.log("agentResult.response",agentResult.response);
-        result = agentResult.response;
+        console.log("processedMessage", processedMessage);
+        console.log("agentResult.response", agentResult.response);
+        // result = agentResult.response;
+        // 🔥 STEP 2: English → Tamil
+        // 🔥 Extract only message string
+        let finalMessage = agentResult.response?.message || "";
+
+        // safety check
+        if (typeof finalMessage !== "string") {
+          finalMessage = JSON.stringify(finalMessage);
+        }
+
+
+        // 🔥 STEP: Generate audio ONLY for Tamil
+        let audioBase64 = null;
+
+        // 🔥 Translate only the text
+        if (language?.toLowerCase().trim() === "ta" && finalMessage.trim() !== "") {
+          finalMessage = await refineQuery(finalMessage, "toTamil");
+
+          const audioBuffer = await textToSpeech(finalMessage);
+
+          if (audioBuffer) {
+            audioBase64 = audioBuffer.toString("base64");
+          }
+        }
+
+        // 🔥 Send structured response
+        result = {
+          success: agentResult.response.success,
+          message: finalMessage,
+          intent: agentResult.response.intent,
+          data: agentResult.response.data,
+          audio: audioBase64 // ADD THIS
+        };
       }
 
       // Add session ID to response

@@ -1,0 +1,62 @@
+import React from "react";
+import { AiOutlineClose } from "react-icons/ai";
+import { BsChatDots } from "react-icons/bs";
+import { FiSettings } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+
+const ChatHeader = ({ isSpeaking, isListening, isLoading, onClose }) => {
+  const navigate = useNavigate();
+
+  const handleSettingsClick = () => {
+    navigate("/chat/settings/language");
+  };
+
+  return (
+    <div className="bg-gradient-to-r from-orange-400 to-orange-500 px-5 py-4 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm relative">
+          <BsChatDots className="text-white text-xl" />
+          {isSpeaking && (
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+          )}
+        </div>
+        <div>
+          <h3 className="text-white font-semibold text-lg">Anaachi AI</h3>
+          <p className="text-white/80 text-xs">
+            {isListening
+              ? "🎤 Listening..."
+              : isSpeaking
+                ? "🔊 Speaking..."
+                : isLoading
+                  ? "⏳ Thinking..."
+                  : "Powered by AI"}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        {/* Settings Icon */}
+        <button
+          onClick={handleSettingsClick}
+          className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center"
+          aria-label="Open settings"
+          title="Settings"
+        >
+          <FiSettings className="text-white text-lg" />
+        </button>
+
+        {/* Close Icon */}
+        <button
+          onClick={onClose}
+          className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center"
+          aria-label="Close chat"
+        >
+          <AiOutlineClose className="text-white text-lg" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default ChatHeader;
+

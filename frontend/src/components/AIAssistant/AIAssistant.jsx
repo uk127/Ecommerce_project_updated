@@ -5,19 +5,29 @@ import { BsChatDots, BsStar, BsCheckCircle, BsXCircle } from "react-icons/bs";
 import { IoMdTrendingUp } from "react-icons/io";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import ChatHeader from "./ChatHeader";
+import LanguageSettingsPage from "./LanguageSettingsPage";
 import { server, getImageUrl } from "../../server";
 import { addTocart, removeFromCart } from "../../redux/actions/cart";
+
+
 
 const AIAssistant = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { cart } = useSelector((state) => state.cart);
   const { user } = useSelector((state) => state.user) || {};
   const { isSeller, seller } = useSelector((state) => state.seller) || {};
 
   const [receivedProducts, setReceivedProducts] = useState([]);
+
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language") || "en"
+  );
+
 
   let role = "customer";
   let sellerId = null;
@@ -33,13 +43,48 @@ const AIAssistant = () => {
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
-    let greeting = "Hello Customer! I'm your AI Shopkeeper. I can help you find products, check prices, suggest items based on tags (e.g., healthy, budget, snacks), manage your cart, and more.";
-    if (role === "seller") {
-      greeting = "Hello Seller! I'm your AI Assistant. I can provide analytics insights, show sales data, top products, low stock items, and help classify products.";
-    } else if (role === "admin") {
-      greeting = "Hello Admin! I'm your AI Assistant. I can provide platform-level analytics, monitor sellers performance, identify top categories, and detect low-performing items.";
-    }
+    const handleStorageChange = () => {
+      setLanguage(localStorage.getItem("language") || "en");
+    };
 
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
+  useEffect(() => {
+
+    let greeting = "";
+
+    if (role === "seller") {
+      if (language === "ta") {
+        greeting =
+          "வணக்கம் விற்பனையாளர்! நான் உங்கள் AI உதவியாளர். நான் விற்பனை தகவல்கள், அதிகம் விற்பனையான பொருட்கள், குறைந்த ஸ்டாக் போன்றவற்றை காட்ட முடியும்.";
+      } else {
+        greeting =
+          "Hello Seller! I'm your AI Assistant. I can provide analytics insights, show sales data, top products, low stock items, and help classify products.";
+      }
+    }
+    else if (role === "admin") {
+      if (language === "ta") {
+        greeting =
+          "வணக்கம் நிர்வாகி! நான் உங்கள் AI உதவியாளர். நான் பிளாட்ஃபார்ம் அனலிடிக்ஸ், விற்பனையாளர் செயல்திறன் மற்றும் டேட்டாவை கண்காணிக்க முடியும்.";
+      } else {
+        greeting =
+          "Hello Admin! I'm your AI Assistant. I can provide platform-level analytics, monitor sellers performance, identify top categories, and detect low-performing items.";
+      }
+    }
+    else {
+      if (language === "ta") {
+        greeting =
+          "வணக்கம் வாடிக்கையாளர்! நான் உங்கள் AI ஷாப்பிங் உதவியாளர். நான் பொருட்கள், விலை மற்றும் பரிந்துரைகள் உதவ முடியும்.";
+      } else {
+        greeting =
+          "Hello Customer! I'm your AI Shopkeeper. I can help you find products, check prices, suggest items based on tags (e.g., healthy, budget, snacks), manage your cart, and more.";
+      }
+    }
     setMessages([
       {
         id: 1,
@@ -51,7 +96,7 @@ const AIAssistant = () => {
         }),
       },
     ]);
-  }, [role]);
+  }, [role, language]);
 
   const [inputValue, setInputValue] = useState("");
   const [isListening, setIsListening] = useState(false);
@@ -61,7 +106,8 @@ const AIAssistant = () => {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const recognitionRef = useRef(null);
-
+  const audioRef = useRef(null); // ✅ ADDED
+  
   // Auto-scroll to latest message
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -79,6 +125,16 @@ const AIAssistant = () => {
       }, 300);
     }
   }, [isOpen]);
+
+  // Route detection for language settings page
+  const isLanguageSettings = location.pathname === "/chat/settings/language";
+
+  // Auto-open chat when navigating to language settings
+  useEffect(() => {
+    if (isLanguageSettings) {
+      setIsOpen(true);
+    }
+  }, [isLanguageSettings]);
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -151,7 +207,9 @@ const AIAssistant = () => {
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = "en-US";
+    // utterance.lang = "en-US";
+    utterance.lang = language === "ta" ? "ta-IN" : "en-US";
+
     utterance.rate = 1;
     utterance.pitch = 1;
     utterance.volume = 1;
@@ -170,6 +228,31 @@ const AIAssistant = () => {
 
     window.speechSynthesis.speak(utterance);
   }, []);
+
+  // 🔥 ADDED: ElevenLabs audio player
+  const playAudioFromBase64 = (base64Audio) => {
+    try {
+      // stop previous audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+
+      const audio = new Audio(
+        "data:audio/mpeg;base64," + base64Audio
+      );
+
+      audioRef.current = audio;
+
+      audio.onplay = () => setIsSpeaking(true);
+      audio.onended = () => setIsSpeaking(false);
+      audio.onerror = () => setIsSpeaking(false);
+
+      audio.play();
+    } catch (err) {
+      console.error("Audio play error:", err);
+    }
+  };
 
   // Add product to Redux cart
   const addToReduxCart = useCallback((productData) => {
@@ -254,6 +337,7 @@ const AIAssistant = () => {
         role: role,
         sellerId: sellerId,
         userId: user?._id,   // 🔥 ADD THIS
+        language: localStorage.getItem("language") || "en"
       });
 
       if (response.data.success) {
@@ -320,8 +404,24 @@ const AIAssistant = () => {
         }
 
         // Add message to chat and speak (after any modifications above)
+        // 🔥 ADDED: stop previous audio
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+        window.speechSynthesis.cancel(); // 🔥 ADDED
+
+        // Add message to UI
         setMessages((prev) => [...prev, aiMessage]);
-        speakText(aiMessage.text);
+
+        // 🔥 ADDED: Tamil → ElevenLabs audio
+        if (language === "ta" && response.data.audio) {
+          playAudioFromBase64(response.data.audio);
+        }
+        // 🔥 ADDED: English → browser TTS
+        else {
+          speakText(aiMessage.text);
+        }
       } else {
         throw new Error("Failed to get response");
       }
@@ -942,153 +1042,142 @@ const AIAssistant = () => {
           boxShadow: "0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 25px rgba(0, 0, 0, 0.1)",
         }}
       >
-        {/* Header */}
-        <div className="bg-gradient-to-r from-orange-400 to-orange-500 px-5 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm relative">
-              <BsChatDots className="text-white text-xl" />
-              {isSpeaking && (
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-              )}
-            </div>
-            <div>
-              <h3 className="text-white font-semibold text-lg">Anaachi AI</h3>
-              <p className="text-white/80 text-xs">
-                {isListening ? "🎤 Listening..." : isSpeaking ? "🔊 Speaking..." : isLoading ? "⏳ Thinking..." : "Powered by AI"}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              stopSpeaking();
-            }}
-            className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center"
-            aria-label="Close chat"
-          >
-            <AiOutlineClose className="text-white text-lg" />
-          </button>
-        </div>
+        {isLanguageSettings ? (
+          <LanguageSettingsPage />
+        ) : (
+          <>
+            {/* Header */}
+            <ChatHeader
+              isSpeaking={isSpeaking}
+              isListening={isListening}
+              isLoading={isLoading}
+              onClose={() => {
+                setIsOpen(false);
+                stopSpeaking();
+              }}
+            />
 
-        {/* Messages Area */}
-        <div
-          className="h-[360px] overflow-y-auto px-4 py-4 bg-gradient-to-b from-orange-50/50 to-white"
-          style={{ scrollbarWidth: "thin", scrollbarColor: "#fdba74 #fff7ed" }}
-        >
-          {messages.map((message) => (
+            {/* Messages Area */}
             <div
-              key={message.id}
-              className={`flex flex-col mb-4 ${message.sender === "user" ? "items-end" : "items-start"}`}
+              className="h-[360px] overflow-y-auto px-4 py-4 bg-gradient-to-b from-orange-50/50 to-white"
+              style={{ scrollbarWidth: "thin", scrollbarColor: "#fdba74 #fff7ed" }}
             >
-              {message.intent && getIntentBadge(message.intent) && (
-                <div className="mb-1">{getIntentBadge(message.intent)}</div>
-              )}
-              <div
-                className={`max-w-[90%] ${message.sender === "user"
-                  ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-2xl rounded-br-md"
-                  : "bg-white border border-orange-100 text-gray-700 rounded-2xl rounded-bl-md shadow-sm"
-                  } px-4 py-3`}
-              >
-                <div className="text-sm leading-relaxed">
-                  {formatMessageText(message.text, message.sender === "user", receivedProducts)}
-                </div>
-                <p
-                  className={`text-[10px] mt-1 ${message.sender === "user" ? "text-white/70" : "text-gray-400"
-                    }`}
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex flex-col mb-4 ${message.sender === "user" ? "items-end" : "items-start"}`}
                 >
-                  {message.timestamp}
-                </p>
-                {message.sender === "ai" && renderMessageData(message)}
-              </div>
-            </div>
-          ))}
-
-          {/* Loading indicator */}
-          {isLoading && (
-            <div className="flex justify-start mb-4">
-              <div className="bg-white border border-orange-100 text-gray-700 rounded-2xl rounded-bl-md shadow-sm px-4 py-3">
-                <div className="flex gap-1 items-center">
-                  <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  {message.intent && getIntentBadge(message.intent) && (
+                    <div className="mb-1">{getIntentBadge(message.intent)}</div>
+                  )}
+                  <div
+                    className={`max-w-[90%] ${message.sender === "user"
+                      ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-2xl rounded-br-md"
+                      : "bg-white border border-orange-100 text-gray-700 rounded-2xl rounded-bl-md shadow-sm"
+                      } px-4 py-3`}
+                  >
+                    <div className="text-sm leading-relaxed">
+                      {formatMessageText(message.text, message.sender === "user", receivedProducts)}
+                    </div>
+                    <p
+                      className={`text-[10px] mt-1 ${message.sender === "user" ? "text-white/70" : "text-gray-400"
+                        }`}
+                    >
+                      {message.timestamp}
+                    </p>
+                    {message.sender === "ai" && renderMessageData(message)}
+                  </div>
                 </div>
+              ))}
+
+              {/* Loading indicator */}
+              {isLoading && (
+                <div className="flex justify-start mb-4">
+                  <div className="bg-white border border-orange-100 text-gray-700 rounded-2xl rounded-bl-md shadow-sm px-4 py-3">
+                    <div className="flex gap-1 items-center">
+                      <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="px-4 py-3 bg-white border-t border-orange-100">
+              <div className="flex items-center gap-2">
+                {/* Voice Button */}
+                <button
+                  onClick={handleVoiceInput}
+                  disabled={!voiceSupported || isLoading}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${!voiceSupported
+                    ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                    : isListening
+                      ? "bg-red-500 text-white animate-pulse"
+                      : "bg-orange-100 text-orange-500 hover:bg-orange-200"
+                    }`}
+                  aria-label="Voice input"
+                  title={voiceSupported ? "Click to speak" : "Voice not supported"}
+                >
+                  <HiOutlineMicrophone className="text-xl" />
+                </button>
+
+                {/* Input Field */}
+                <div className="flex-1 relative">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder={isListening ? "Listening..." : isLoading ? "Processing..." : "Ask about products, prices, cart..."}
+                    disabled={isListening || isLoading}
+                    className={`w-full px-4 py-2.5 bg-orange-50 border border-orange-100 rounded-full text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100 transition-all ${isListening || isLoading ? "opacity-70" : ""
+                      }`}
+                  />
+                </div>
+
+                {/* Send Button */}
+                <button
+                  onClick={handleSendMessage}
+                  disabled={inputValue.trim() === "" || isLoading || isListening}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${inputValue.trim() === "" || isLoading || isListening
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-orange-400 to-orange-500 text-white hover:shadow-lg hover:scale-105"
+                    }`}
+                  aria-label="Send message"
+                >
+                  <AiOutlineSend className="text-lg" />
+                </button>
               </div>
+
+              {/* Status indicators */}
+              {isListening && (
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-2 h-2 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-2 h-2 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                  <p className="text-xs text-red-500 font-medium">Listening... Speak now!</p>
+                </div>
+              )}
+
+              {isSpeaking && !isListening && (
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <p className="text-xs text-green-600 font-medium">AI is speaking...</p>
+                  <button onClick={stopSpeaking} className="text-xs text-gray-500 underline hover:text-gray-700">
+                    Stop
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Area */}
-        <div className="px-4 py-3 bg-white border-t border-orange-100">
-          <div className="flex items-center gap-2">
-            {/* Voice Button */}
-            <button
-              onClick={handleVoiceInput}
-              disabled={!voiceSupported || isLoading}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${!voiceSupported
-                ? "bg-gray-100 text-gray-300 cursor-not-allowed"
-                : isListening
-                  ? "bg-red-500 text-white animate-pulse"
-                  : "bg-orange-100 text-orange-500 hover:bg-orange-200"
-                }`}
-              aria-label="Voice input"
-              title={voiceSupported ? "Click to speak" : "Voice not supported"}
-            >
-              <HiOutlineMicrophone className="text-xl" />
-            </button>
-
-            {/* Input Field */}
-            <div className="flex-1 relative">
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={isListening ? "Listening..." : isLoading ? "Processing..." : "Ask about products, prices, cart..."}
-                disabled={isListening || isLoading}
-                className={`w-full px-4 py-2.5 bg-orange-50 border border-orange-100 rounded-full text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100 transition-all ${isListening || isLoading ? "opacity-70" : ""
-                  }`}
-              />
-            </div>
-
-            {/* Send Button */}
-            <button
-              onClick={handleSendMessage}
-              disabled={inputValue.trim() === "" || isLoading || isListening}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${inputValue.trim() === "" || isLoading || isListening
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-orange-400 to-orange-500 text-white hover:shadow-lg hover:scale-105"
-                }`}
-              aria-label="Send message"
-            >
-              <AiOutlineSend className="text-lg" />
-            </button>
-          </div>
-
-          {/* Status indicators */}
-          {isListening && (
-            <div className="flex items-center justify-center gap-2 mt-2">
-              <div className="flex gap-1">
-                <span className="w-2 h-2 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-2 h-2 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-2 h-2 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-              </div>
-              <p className="text-xs text-red-500 font-medium">Listening... Speak now!</p>
-            </div>
-          )}
-
-          {isSpeaking && !isListening && (
-            <div className="flex items-center justify-center gap-2 mt-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <p className="text-xs text-green-600 font-medium">AI is speaking...</p>
-              <button onClick={stopSpeaking} className="text-xs text-gray-500 underline hover:text-gray-700">
-                Stop
-              </button>
-            </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
 
       {/* Floating Chat Button */}

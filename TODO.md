@@ -1,8 +1,11 @@
-# Task: AI Assistant Image URL Rendering
+# Chatbot Language Settings Implementation
 
 ## Steps
-- [x] 1. Search for AIAssistant component and understand message rendering
-- [x] 2. Read AIAssistant.jsx and understand formatMessageText function
-- [ ] 3. Modify formatMessageText to detect image URLs and render as <img> tags
-- [ ] 4. Test that existing markdown/bold/newline behavior is preserved
+
+- [x] Step 1: Create `ChatHeader.jsx` with settings icon and navigation
+- [x] Step 2: Create `LanguageSettingsPage.jsx` with language options and back button
+- [x] Step 3: Modify `AIAssistant.jsx` to integrate ChatHeader, LanguageSettingsPage, and route-based rendering
+- [x] Step 4: Modify `App.jsx` to add `/chat/settings/language` route
+- [x] Step 5: Update `index.js` to export new components
+- [x] Step 6: Test and verify the implementation
 

@@ -1,0 +1,77 @@
+import axios from "axios";
+
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+
+export async function refineQuery(message, mode = "toEnglish") {
+  if (!OPENROUTER_API_KEY) {
+    throw new Error("OPENROUTER API key is not configured");
+  }
+
+  let systemPrompt = "";
+
+  // Mode 1: Tamil → English (for search)
+  if (mode === "toEnglish") {
+    systemPrompt = `
+You are a strict translator.
+
+Rules:
+- ALWAYS convert input into English.
+- If input is Tamil, translate it to English.
+- Output must be ONLY English words.
+- Do NOT return Tamil.
+- Do NOT explain anything.
+
+Examples:
+"உங்களிடம் பச்சை குடைமிளகாய் உள்ளதா?" → Do you have green capsicum?
+"ஆரோக்கியமான ஸ்நாக்ஸ்" → healthy snacks
+`;
+  }
+
+  // Mode 2: English → Tamil (for response)
+  else if (mode === "toTamil") {
+    systemPrompt = `
+You are a translator.
+
+Rules:
+- Translate the given English text into Tamil.
+- Keep it natural and user-friendly.
+- Do NOT explain anything.
+- Return ONLY Tamil text.
+`;
+  }
+
+  try {
+    const response = await axios.post(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        model: "openai/gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message }
+        ],
+        temperature: 0
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "http://localhost:8001"
+        }
+      }
+    );
+
+    const result = response.data.choices[0].message.content.trim();
+
+    console.log("Refined Result:", result);
+
+    return result;
+
+  } catch (error) {
+    console.error(
+      "OpenRouter refineQuery error:",
+      error.response ? error.response.data : error.message
+    );
+
+    return message; // fallback
+  }
+}

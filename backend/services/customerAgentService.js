@@ -95,7 +95,7 @@ async function executeCustomerAgent(message, userId, sessionId) {
         }
     );
 
-    console.log("FULL RESULT:", JSON.stringify(result, null, 2));
+    // console.log("FULL RESULT:", JSON.stringify(result, null, 2));
 
     // ✅ TOOL OUTPUT EXISTS HERE
     const steps = result.intermediateSteps;

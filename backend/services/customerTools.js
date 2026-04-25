@@ -11,7 +11,7 @@ const AICart = require("../model/aiCart");
 const search_products_tool = tool(
     async ({ query, category, maxPrice }, config) => {
         try {
-            console.log("🔍 SEARCH TOOL CALLED:", { query, category, maxPrice });
+            // console.log("🔍 SEARCH TOOL CALLED:", { query, category, maxPrice });
 
             const filter = {};
 
