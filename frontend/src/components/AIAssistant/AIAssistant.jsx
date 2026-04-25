@@ -121,7 +121,7 @@ const AIAssistant = () => {
   const inputRef = useRef(null);
   const recognitionRef = useRef(null);
   const audioRef = useRef(null); // ✅ ADDED
-  
+
   // Auto-scroll to latest message
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -374,8 +374,12 @@ const AIAssistant = () => {
         };
         console.log("response", response);
         console.log("response.data", response.data);
-        setReceivedProducts(response.data.data.products);
-        console.log("response.data.data.products", response.data.data.products);
+        // setReceivedProducts(response.data.data.products);
+        if (response.data.data?.products) {
+          setReceivedProducts(response.data.data.products);
+        } else {
+          setReceivedProducts([]);
+        }
         // Handle cart operations with Redux
         if (response.data.intent === "AddToCart" && response.data.data?.products) {
           // Products are returned from backend with full details

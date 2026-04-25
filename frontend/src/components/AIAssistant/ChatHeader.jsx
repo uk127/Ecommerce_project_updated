@@ -3,13 +3,13 @@ import { AiOutlineClose } from "react-icons/ai";
 import { BsChatDots } from "react-icons/bs";
 import { FiSettings } from "react-icons/fi";
 import { HiOutlineVolumeUp, HiOutlineVolumeOff } from "react-icons/hi";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const ChatHeader = ({ isSpeaking, isListening, isLoading, isAudioEnabled, onToggleAudio, onClose }) => {
   const navigate = useNavigate();
-
+  const location = useLocation();
   const handleSettingsClick = () => {
-    navigate("/chat/settings/language");
+    navigate("/chat/settings/language", { replace: false, state: { from: location.pathname } });
   };
 
   return (
