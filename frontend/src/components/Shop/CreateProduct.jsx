@@ -22,6 +22,7 @@ const productTypesByCategory = {
         "Breakfast / Cereals",
         "Spreads / Sauces",
         "Bakery",
+        "Eggs / Poultry",
         "Others"
     ],
     "Home & Office": [

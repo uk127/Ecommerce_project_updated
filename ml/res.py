@@ -1,11 +1,11 @@
-import torch
-from transformers import BlipProcessor, BlipForConditionalGeneration, AutoTokenizer, AutoModelForSeq2SeqLM
+# import torch
+# from transformers import BlipProcessor, BlipForConditionalGeneration, AutoTokenizer, AutoModelForSeq2SeqLM
 from PIL import Image
-import easyocr
+# import easyocr
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
-import spacy
+# import spacy
 import requests
 import io
 import numpy as np
@@ -20,58 +20,58 @@ CORS(app)  # Enable CORS for all routes
 # -------------------------------
 # Load OCR (once)
 # -------------------------------
-reader = easyocr.Reader(['en'], gpu=False, verbose=False)
+# reader = easyocr.Reader(['en'], gpu=False, verbose=False)
 
 # -------------------------------
 # Load BLIP model (once)
 # -------------------------------
 
-processor = BlipProcessor.from_pretrained(
-    "Salesforce/blip-image-captioning-base",
-    use_fast=True
-)
-model = BlipForConditionalGeneration.from_pretrained(
-    "Salesforce/blip-image-captioning-base"
-)
-model.eval()
-# Load SpaCy English model
-nlp = spacy.load("en_core_web_sm")
+# processor = BlipProcessor.from_pretrained(
+#     "Salesforce/blip-image-captioning-base",
+#     use_fast=True
+# )
+# model = BlipForConditionalGeneration.from_pretrained(
+#     "Salesforce/blip-image-captioning-base"
+# )
+# model.eval()
+# # Load SpaCy English model
+# nlp = spacy.load("en_core_web_sm")
 
 # -------------------------------
 # Load FLAN model for description generation
 # -------------------------------
-flan_tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-base")
-flan_model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base")
-flan_model.eval()
+# flan_tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-base")
+# flan_model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base")
+# flan_model.eval()
 
-# -------------------------------
-# Generate description function
-# -------------------------------
-def generate_description(product_name):
-    """
-    Generate a product description using FLAN model.
+# # -------------------------------
+# # Generate description function
+# # -------------------------------
+# def generate_description(product_name):
+#     """
+#     Generate a product description using FLAN model.
     
-    Args:
-        product_name (str): The name of the product
-    Returns:
-        str: Generated product description
-    """
-    prompt = (
-        f"You are a creative e-commerce copywriter. "
-        f"Write 45 short, engaging bullet points describing '{product_name}'. "
-        "Include taste, texture, usage, packaging, and why customers will love it. "
-        "Keep it unique and readable for an online store."
-    )
-    inputs = flan_tokenizer(prompt, return_tensors="pt")
-    outputs = flan_model.generate(
-        **inputs,
-        max_length=250,
-        do_sample=True,
-        top_p=0.9,
-        temperature=0.7,
-        no_repeat_ngram_size=2
-    )
-    return flan_tokenizer.decode(outputs[0], skip_special_tokens=True)
+#     Args:
+#         product_name (str): The name of the product
+#     Returns:
+#         str: Generated product description
+#     """
+#     prompt = (
+#         f"You are a creative e-commerce copywriter. "
+#         f"Write 45 short, engaging bullet points describing '{product_name}'. "
+#         "Include taste, texture, usage, packaging, and why customers will love it. "
+#         "Keep it unique and readable for an online store."
+#     )
+#     inputs = flan_tokenizer(prompt, return_tensors="pt")
+#     outputs = flan_model.generate(
+#         **inputs,
+#         max_length=250,
+#         do_sample=True,
+#         top_p=0.9,
+#         temperature=0.7,
+#         no_repeat_ngram_size=2
+#     )
+#     return flan_tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 # -------------------------------
 # Background removal function
@@ -104,60 +104,61 @@ def remove_background(input_image_path, output_image_path):
 # Main function
 # -------------------------------
 def generate_title_and_description(image):
-    """
-    image: PIL.Image
-    """
+#     """
+#     image: PIL.Image
+#     """
 
     # PIL → NumPy for EasyOCR
-    image_np = np.array(image)
+    # image_np = np.array(image)
 
     # 1️⃣ OCR
-    ocr_result = reader.readtext(image_np)
+    # ocr_result = reader.readtext(image_np)
 
-    if ocr_result:
-        raw_text = " ".join([text for _, text, _ in ocr_result])
+    # if ocr_result:
+    #     raw_text = " ".join([text for _, text, _ in ocr_result])
 
-        import re
-        text = re.sub(r"[^A-Za-z0-9\s]", " ", raw_text)
-        text = re.sub(r"\s+", " ", text).strip()
+    #     import re
+    #     text = re.sub(r"[^A-Za-z0-9\s]", " ", raw_text)
+    #     text = re.sub(r"\s+", " ", text).strip()
 
-        doc = nlp(text)
-        keywords = [t.text for t in doc if t.pos_ in ["NOUN", "PROPN", "ADJ"]]
+    #     doc = nlp(text)
+    #     keywords = [t.text for t in doc if t.pos_ in ["NOUN", "PROPN", "ADJ"]]
 
-        unique_words = []
-        for w in keywords:
-            if w.lower() not in [x.lower() for x in unique_words]:
-                unique_words.append(w)
+    #     unique_words = []
+    #     for w in keywords:
+    #         if w.lower() not in [x.lower() for x in unique_words]:
+    #             unique_words.append(w)
 
-        clean_title = " ".join(unique_words).title()
-        description = generate_description(clean_title)
+    #     clean_title = " ".join(unique_words).title()
+    #     description = generate_description(clean_title)
 
-        return {
-            "title": clean_title,
-            "description": description
-        }
+    #     return {
+    #         "title": clean_title,
+    #         "description": description
+    #     }
 
     # 2️⃣ OCR failed → BLIP
-    inputs = processor(images=image, return_tensors="pt")
+    # inputs = processor(images=image, return_tensors="pt")
 
-    with torch.no_grad():
-        output = model.generate(
-            **inputs,
-            max_length=10,
-            num_beams=5,
-            repetition_penalty=3.0,
-            no_repeat_ngram_size=2,
-            early_stopping=True
-        )
+    # with torch.no_grad():
+    #     output = model.generate(
+    #         **inputs,
+    #         max_length=10,
+    #         num_beams=5,
+    #         repetition_penalty=3.0,
+    #         no_repeat_ngram_size=2,
+    #         early_stopping=True
+    #     )
 
-    caption = processor.decode(output[0], skip_special_tokens=True)
+    # caption = processor.decode(output[0], skip_special_tokens=True)
 
-    doc = nlp(caption)
-    words = [t.text for t in doc if t.pos_ in ["NOUN", "PROPN", "ADJ"]]
+    # doc = nlp(caption)
+    # words = [t.text for t in doc if t.pos_ in ["NOUN", "PROPN", "ADJ"]]
 
-    title_clean = " ".join(words[:2]).capitalize()
-    description = generate_description(title_clean)
-
+    # title_clean = " ".join(words[:2]).capitalize()
+    # description = generate_description(title_clean)
+    title_clean=""
+    description=""
     return {
         "title": title_clean,
         "description": description
@@ -241,17 +242,17 @@ def generate_title_and_description(image):
 #     }
 
 # Backward compatibility function
-def generate_title(image_path):
-    """
-    Generate title for a product image (backward compatibility).
+# def generate_title(image_path):
+#     """
+#     Generate title for a product image (backward compatibility).
     
-    Args:
-        image_path (str): Path to the product image
-    Returns:
-        str: Generated product title
-    """
-    result = generate_title_and_description(image_path)
-    return result['title']
+#     Args:
+#         image_path (str): Path to the product image
+#     Returns:
+#         str: Generated product title
+#     """
+#     result = generate_title_and_description(image_path)
+#     return result['title']
 
 
 # =====================================================
@@ -682,7 +683,7 @@ def generate_title_endpoint():
 
     try:
         # Generate title
-        title = generate_title(temp_path)
+        title = ""
         return jsonify({'title': title})
     except Exception as e:
         return jsonify({'error': str(e)}), 500

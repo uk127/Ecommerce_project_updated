@@ -6,15 +6,18 @@ const tools = require("./tools");
 // -----------------------------
 // LLM (FIXED)
 // -----------------------------
+// TO USE OPENROUTER CHANGE
+// apiKey: process.env.OPENROUTER_API_KEY,
+// baseURL: "https://openrouter.ai/api/v1"
 
 //model: "openai/gpt-4o-mini"
 
 const llm = new ChatOpenAI({
   model: "openai/gpt-4o-mini", // ✅ FIXED (better tool calling)
   temperature: 0,
-  apiKey: process.env.OPENROUTER_API_KEY,
+  apiKey: process.env.AICREDITS_API_KEY,
   configuration: {
-    baseURL: "https://openrouter.ai/api/v1",
+    baseURL: "https://api.aicredits.in/v1",
   },
 });
 

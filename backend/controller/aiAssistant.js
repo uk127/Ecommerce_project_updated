@@ -13,6 +13,7 @@ const { executeCustomerAgent } = require("../services/customerAgentService");
 const { refineQuery } = require("../services/refineQuery");
 
 const { textToSpeech } = require("../services/textToSpeech");
+const { executeAdminAgent } = require("../services/adminAgentService");
 /**
  * Main chat endpoint - handles all AI assistant interactions
  */
@@ -58,7 +59,14 @@ router.post(
         };
       } else if (role === "admin") {
         // Admin role: ONLY admin features allowed. Block ALL customer intents
-        result = await handleAdminQueries(processedMessage);
+        const agentResult = await executeAdminAgent(processedMessage,req.body.userId);
+        const finalAdminMessage = agentResult.response.message;
+        result ={
+          success: agentResult.response.success,
+          message: finalAdminMessage,
+          intent: agentResult.response.intent,
+          data: agentResult.response.data
+        };
       } else {
         if (!req.body.userId) {
           return next(new ErrorHandler("userId is required for customer", 400));

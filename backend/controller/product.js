@@ -313,9 +313,10 @@ router.post(
       }
 
       // Call OpenRouter API
-      const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+      //for openrouter use process.env.OPENROUTER_API_KEY
+      const apiKey = process.env.AICREDITS_API_KEY;
 
-      if (!openRouterApiKey) {
+      if (!apiKey) {
         console.error("[Generate Product] OPENROUTER_API_KEY not found in environment");
         return next(new ErrorHandler("OpenRouter API key not configured", 500));
       }
@@ -325,9 +326,9 @@ router.post(
       console.log("[Generate Product] Built prompt for mode:", mode);
 
       console.log("[Generate Product] Calling OpenRouter API...");
-
+      // for openrouter https://api.aicredits.in/v1/chat/completions
       const response = await axios.post(
-        "https://openrouter.ai/api/v1/chat/completions",
+        "https://api.aicredits.in/v1/chat/completions",
         {
           model: "openai/gpt-4o-mini",
           messages: [
@@ -350,16 +351,14 @@ router.post(
         },
         {
           headers: {
-            "Authorization": `Bearer ${openRouterApiKey}`,
+            "Authorization": `Bearer ${apiKey}`,
             "Content-Type": "application/json",
-            "HTTP-Referer": "http://localhost:3000",
-            "X-Title": "SigmaStore Product Generator"
           },
           timeout: 60000
         }
       );
 
-      console.log("[Generate Product] OpenRouter response received");
+      console.log("[Generate Product] response received");
 
       // Extract the content from the response
       const content = response.data.choices[0].message.content;
