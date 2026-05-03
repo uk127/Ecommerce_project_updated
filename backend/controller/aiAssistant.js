@@ -51,23 +51,56 @@ router.post(
         // Seller role: ONLY seller features allowed. Block ALL customer intents
         // result = await handleSellerQueries(message, sellerId);
         const agentResult = await executeSellerAgent(processedMessage, sellerId);
+        let finalMessage = agentResult.response || "";
+        // STEP: Generate audio ONLY for Tamil
+        let audioBase64 = null;
+
+        // Translate only the text
+        if (language?.toLowerCase().trim() === "ta" && finalMessage.trim() !== "") {
+          finalMessage = await refineQuery(finalMessage, "toTamil");
+
+          const audioBuffer = await textToSpeech(finalMessage);
+
+          if (audioBuffer) {
+            audioBase64 = audioBuffer.toString("base64");
+          }
+        }
+
         result = {
           success: true,
-          message: agentResult.response,
+          message: finalMessage,
           intent: "SellerQuery",
           data: null,
+          audio: audioBase64
         };
       } else if (role === "admin") {
         // Admin role: ONLY admin features allowed. Block ALL customer intents
-        const agentResult = await executeAdminAgent(processedMessage,req.body.userId);
+        const agentResult = await executeAdminAgent(processedMessage, req.body.userId);
         const finalAdminMessage = agentResult.response.message;
-        result ={
+        let finalMessage  = finalAdminMessage;
+        let audioBase64 = null;
+
+        // Translate only the text
+        if (language?.toLowerCase().trim() === "ta" && finalMessage.trim() !== "") {
+          finalMessage = await refineQuery(finalMessage, "toTamil");
+
+          const audioBuffer = await textToSpeech(finalMessage);
+
+          if (audioBuffer) {
+            audioBase64 = audioBuffer.toString("base64");
+          }
+        }
+
+
+        result = {
           success: agentResult.response.success,
-          message: finalAdminMessage,
+          message: finalMessage,
           intent: agentResult.response.intent,
-          data: agentResult.response.data
+          data: agentResult.response.data,
+          audio: audioBase64
         };
-      } else {
+      } 
+      else {
         if (!req.body.userId) {
           return next(new ErrorHandler("userId is required for customer", 400));
         }
