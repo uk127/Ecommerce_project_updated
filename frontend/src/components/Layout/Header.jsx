@@ -150,7 +150,8 @@ const Header = ({ activeHeading }) => {
             <Link to="/">
               <img
                 // src="https://shopo.quomodothemes.website/assets/images/logo.svg"
-                src="sigmastore4.png"
+                src="angadi_logo2.png"
+                className="w-35 h-20"
                 alt=""
               />
             </Link>
@@ -355,9 +356,9 @@ const Header = ({ activeHeading }) => {
             <Link to="/">
               <img
                 // src="https://shopo.quomodothemes.website/assets/images/logo.svg"
-                src="sigmastore4.png"
+                src="angadi_logo2.png"
                 alt=""
-                className="mt-3 cursor-pointer"
+                className="mt-3 cursor-pointer w-35 h-12"
               />
             </Link>
           </div>

@@ -38,8 +38,9 @@ const Footer = () => {
                 <ul className="px-5 text-center sm:text-start flex sm:block flex-col items-center">
                     <img
                         // src="https://shopo.quomodothemes.website/assets/images/logo.svg"
-                        src="sigmastore4.png"
+                        src="angadi_logo2.png"
                         alt=""
+                        className="mt-3 cursor-pointer w-35 h-12"
                         style={{ filter: "brightness(0) invert(1)" }}
                     />
                     <br />

@@ -34,8 +34,9 @@ const DashboardHeader = () => {
                 <Link to="/dashboard">
                     <img
                         // src="https://shopo.quomodothemes.website/assets/images/logo.svg"
-                        src="sigmastore4.png"
+                        src="angadi_logo2.png"
                         alt=""
+                        className="mt-3 cursor-pointer w-35 h-12"
                     />
                 </Link>
             </div>
