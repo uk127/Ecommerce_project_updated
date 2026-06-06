@@ -24,6 +24,8 @@ const AIAssistant = () => {
 
   const [receivedProducts, setReceivedProducts] = useState([]);
 
+  const [showSettings, setShowSettings] = useState(false);
+
   // 🔊 GLOBAL AUDIO TOGGLE: persisted in localStorage (default ON)
   const [isAudioEnabled, setIsAudioEnabled] = useState(() => {
     const saved = localStorage.getItem("aiAudioEnabled");
@@ -1069,8 +1071,8 @@ const AIAssistant = () => {
           boxShadow: "0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 25px rgba(0, 0, 0, 0.1)",
         }}
       >
-        {isLanguageSettings ? (
-          <LanguageSettingsPage />
+        {showSettings ? (
+          <LanguageSettingsPage onBack={() => setShowSettings(false)} />
         ) : (
           <>
             {/* Header */}
@@ -1080,6 +1082,7 @@ const AIAssistant = () => {
               isLoading={isLoading}
               isAudioEnabled={isAudioEnabled}
               onToggleAudio={toggleAudio}
+              onSettingsClick={() => setShowSettings(true)}
               onClose={() => {
                 setIsOpen(false);
                 stopSpeaking();

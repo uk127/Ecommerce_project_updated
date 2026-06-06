@@ -5,12 +5,12 @@ import { FiSettings } from "react-icons/fi";
 import { HiOutlineVolumeUp, HiOutlineVolumeOff } from "react-icons/hi";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const ChatHeader = ({ isSpeaking, isListening, isLoading, isAudioEnabled, onToggleAudio, onClose }) => {
+const ChatHeader = ({ isSpeaking, isListening, isLoading, isAudioEnabled, onToggleAudio, onClose, onSettingsClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const handleSettingsClick = () => {
-    navigate("/chat/settings/language", { replace: false, state: { from: location.pathname } });
-  };
+  // const handleSettingsClick = () => {
+  //   navigate("/chat/settings/language", { replace: false, state: { from: location.pathname } });
+  // };
 
   return (
     <div className="bg-gradient-to-r from-orange-400 to-orange-500 px-5 py-4 flex items-center justify-between">
@@ -52,7 +52,7 @@ const ChatHeader = ({ isSpeaking, isListening, isLoading, isAudioEnabled, onTogg
 
         {/* Settings Icon */}
         <button
-          onClick={handleSettingsClick}
+          onClick={onSettingsClick}
           className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center"
           aria-label="Open settings"
           title="Settings"
