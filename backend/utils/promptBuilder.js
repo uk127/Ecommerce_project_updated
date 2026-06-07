@@ -9,7 +9,9 @@ const outputFormats = {
     title: "Product Title Here",
     description: "Detailed product description here",
     tags: ["tag1", "tag2", "tag3"],
-    brand: "Brand Name"
+    brand: "Brand Name",
+    category: "Category Name",
+    productType: "Product Type Name"
   },
   title: { title: "Product Title Here" },
   description: { description: "Detailed product description here" },
@@ -45,7 +47,114 @@ const buildPrompt = ({ mode, category, productType, imageUrl }) => {
   // Get output format for the mode
   const outputFormat = JSON.stringify(outputFormats[mode], null, 2);
   const guidelines = fieldGuidelines[mode];
+  const productTypesByCategory = {
+    "Grocery": [
+      "Fruit",
+      "Vegetable",
+      "Grain / Rice",
+      "Spice / Masala",
+      "Dairy Product",
+      "Nuts / Dry Fruits",
+      "Snack",
+      "Ready Mix / Instant Mix",
+      "Breakfast / Cereals",
+      "Spreads / Sauces",
+      "Bakery",
+      "Eggs / Poultry",
+      "Others"
+    ],
+    "Home & Office": [
+      "Furniture",
+      "Decor",
+      "Kitchen",
+      "Stationery",
+      "Storage",
+      "Others"
+    ],
+    "Electronics & Appliances": [
+      "Mobile Phones",
+      "Tablets",
+      "Laptops",
+      "Desktops",
+      "Audio Devices",
+      "TV & Entertainment",
+      "Home Appliances",
+      "Kitchen Appliances",
+      "Smart Devices",
+      "Gaming",
+      "Electronic Accessories",
+      "Power & Electrical"
+    ],
+    "Fashion": [
+      "Men Clothing",
+      "Women Clothing",
+      "Kids Wear",
+      "Footwear",
+      "Bags & Accessories",
+      "Watches",
+    ],
+    "Beauty & Personal Care": [
+      "Skincare",
+      "Haircare",
+      "Makeup",
+      "Fragrances",
+      "Grooming",
+      "Personal Hygiene",
+      "Others"
+    ],
+    "Sports & Fitness": [
+      "Fitness Equipment",
+      "Yoga Accessories",
+      "Sports Gear",
+      "Outdoor Equipment",
+      "Others"
+    ],
+    "Pet Care": [
+      "Pet Food",
+      "Pet Grooming",
+      "Pet Accessories",
+      "Health Care",
+      "Others"
+    ],
+    "Toys & Baby Products": [
+      "Toys",
+      "Baby Care",
+      "Diapers & Wipes",
+      "Feeding Products",
+      "Baby Gear",
+      "Others"
+    ],
+    "Gardening & Outdoor": [
+      "Plants",
+      "Seeds",
+      "Gardening Tools",
+      "Pots & Planters",
+      "Fertilizers & Soil",
+      "Others"
+    ],
+    "Others": [
+      "General",
+      "Others"
+    ]
+  };
 
+  // Added category and product type detection instructions for ALL mode
+  const categoryInstructions =
+    mode === 'all'
+      ? `
+Available Categories and Product Types:
+
+${Object.entries(productTypesByCategory)
+        .map(([category, types]) => `${category}: ${types.join(", ")}`)
+        .join("\n")}
+
+Category Rules:
+- Analyze the image and determine the most appropriate category.
+- Determine the most appropriate product type from the selected category.
+- Use only categories and product types from the list above.
+- If uncertain, use category "Others" and productType "General".
+`
+      : '';
   // Build the prompt
   const prompt = `You are an ecommerce expert. Analyze the product image from the provided URL and generate product details.
 
@@ -55,6 +164,7 @@ ${outputFormat}
 Guidelines:
 ${guidelines}
 
+${categoryInstructions}
 STRICT RULES:
 - Do not include extra fields
 - Do not include explanations
@@ -78,7 +188,7 @@ const parseAIResponse = (content, mode) => {
   try {
     // Clean up the content - remove markdown code blocks if present
     let cleanContent = content.trim();
-    
+
     // Remove various markdown code block formats
     if (cleanContent.startsWith("```json")) {
       cleanContent = cleanContent.slice(7);
@@ -88,7 +198,7 @@ const parseAIResponse = (content, mode) => {
     if (cleanContent.endsWith("```")) {
       cleanContent = cleanContent.slice(0, -3);
     }
-    
+
     // Remove any leading/trailing whitespace
     cleanContent = cleanContent.trim();
 
@@ -101,11 +211,11 @@ const parseAIResponse = (content, mode) => {
     if (mode === 'all' || mode === 'title') {
       validatedData.title = typeof productData.title === 'string' ? productData.title : '';
     }
-    
+
     if (mode === 'all' || mode === 'description') {
       validatedData.description = typeof productData.description === 'string' ? productData.description : '';
     }
-    
+
     if (mode === 'all' || mode === 'tags') {
       if (Array.isArray(productData.tags)) {
         validatedData.tags = productData.tags.filter(tag => typeof tag === 'string');
@@ -113,11 +223,24 @@ const parseAIResponse = (content, mode) => {
         validatedData.tags = [];
       }
     }
-    
+
     if (mode === 'all' || mode === 'brand') {
       validatedData.brand = typeof productData.brand === 'string' ? productData.brand : '';
     }
+    // Added category and productType extraction for ALL mode
+    if (mode === 'all') {
+      validatedData.category =
+        typeof productData.category === 'string'
+          ? productData.category
+          : '';
 
+      validatedData.productType =
+        typeof productData.productType === 'string'
+          ? productData.productType
+          : '';
+    }
+    console.log('[FINAL OUTPUT]');
+    console.log(validatedData);
     return validatedData;
   } catch (error) {
     console.error('[PromptBuilder] Failed to parse AI response:', error.message);
@@ -133,15 +256,15 @@ const parseAIResponse = (content, mode) => {
  */
 const validateRequest = ({ mode, imageUrl }) => {
   const validModes = ['all', 'title', 'description', 'tags', 'brand'];
-  
+
   if (!mode) {
     return { valid: false, error: 'Mode is required' };
   }
-  
+
   if (!validModes.includes(mode)) {
     return { valid: false, error: `Invalid mode: ${mode}. Must be one of: ${validModes.join(', ')}` };
   }
-  
+
   if (!imageUrl) {
     return { valid: false, error: 'Image URL is required' };
   }

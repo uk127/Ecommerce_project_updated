@@ -80,6 +80,7 @@ const ProductCard = ({ data, isEvent }) => {
             return;
         }
         handleProductClick();
+        
     };
 
 

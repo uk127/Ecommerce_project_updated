@@ -9,6 +9,7 @@ import { backend_url } from "../../server";
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 
 // Product types based on category
+// IF ADDING NEW CATEGORY OR TYPE JUST ADD IT IN promptBuilder.js (backend/utils/promptBuilder.js) ALSO
 const productTypesByCategory = {
     "Grocery": [
         "Fruit",
@@ -130,40 +131,40 @@ const initialRegenerationState = {
 
 // Loading spinner component
 const LoadingSpinner = ({ size = 16 }) => (
-    <svg 
-        className="animate-spin" 
-        style={{ width: size, height: size }} 
-        xmlns="http://www.w3.org/2000/svg" 
-        fill="none" 
+    <svg
+        className="animate-spin"
+        style={{ width: size, height: size }}
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
         viewBox="0 0 24 24"
     >
-        <circle 
-            className="opacity-25" 
-            cx="12" 
-            cy="12" 
-            r="10" 
-            stroke="currentColor" 
+        <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
             strokeWidth="4"
         ></circle>
-        <path 
-            className="opacity-75" 
-            fill="currentColor" 
+        <path
+            className="opacity-75"
+            fill="currentColor"
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
         ></path>
     </svg>
 );
 
 // AI Button Component
-const AIButton = ({ 
-    onClick, 
-    isLoading, 
-    disabled, 
+const AIButton = ({
+    onClick,
+    isLoading,
+    disabled,
     regenerationState,
     hasImage
 }) => {
     const { count, hasGenerated } = regenerationState;
     const isDisabled = disabled || !hasImage || count <= 0;
-    
+
     const getButtonText = () => {
         if (isLoading) return "Generating...";
         if (!hasGenerated) return "Generate";
@@ -275,7 +276,7 @@ const CreateProduct = () => {
     const [unit, setUnit] = useState("");
     const [stock, setStock] = useState("");
     const [expiryDate, setExpiryDate] = useState("");
-    
+
     // Image URL state (for AI generation)
     const [uploadedImageUrl, setUploadedImageUrl] = useState("");
 
@@ -287,10 +288,10 @@ const CreateProduct = () => {
         tags: false,
         brand: false
     });
-    
+
     // Regeneration tracking
     const [regenerations, setRegenerations] = useState(initialRegenerationState);
-    
+
     // Other UI states
     const [showRemoveBgPopup, setShowRemoveBgPopup] = useState(false);
     const [isProcessingBgRemoval, setIsProcessingBgRemoval] = useState(false);
@@ -310,9 +311,9 @@ const CreateProduct = () => {
     }, [dispatch, error, success]);
 
     // Reset product type when category changes
-    useEffect(() => {
-        setProductType("");
-    }, [category]);
+    // useEffect(() => {
+    //     setProductType("");
+    // }, [category]);
 
     // Get product types for selected category
     const getProductTypes = () => {
@@ -435,6 +436,8 @@ const CreateProduct = () => {
 
             const result = await response.json();
 
+            console.log('[AI RESPONSE]', result.data);
+
             if (result.success && result.data) {
                 // Update form fields based on mode
                 if (mode === 'all' || mode === 'title') {
@@ -451,7 +454,16 @@ const CreateProduct = () => {
                 if (mode === 'all' || mode === 'brand') {
                     setBrand(result.data.brand || "");
                 }
+                // Auto-fill category and product type from AI in ALL mode
+                if (mode === 'all') {
+                    if (result.data.category) {
+                        setCategory(result.data.category);
+                    }
 
+                    if (result.data.productType) {
+                        setProductType(result.data.productType);
+                    }
+                }
                 // Update regeneration state
                 setRegenerations(prev => ({
                     ...prev,
@@ -475,7 +487,7 @@ const CreateProduct = () => {
 
     // Handle Fill All
     const handleFillAll = () => generateWithAI('all');
-    
+
     // Handle individual field generation
     const handleGenerateTitle = () => generateWithAI('title');
     const handleGenerateDescription = () => generateWithAI('description');
@@ -682,7 +694,10 @@ const CreateProduct = () => {
                             <select
                                 className="w-full border border-gray-300 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white"
                                 value={category}
-                                onChange={(e) => setCategory(e.target.value)}
+                                onChange={(e) => {
+                                    setCategory(e.target.value);
+                                    setProductType("");                             
+                                }}
                             >
                                 <option value="">Select Category</option>
                                 {categoriesData &&
@@ -698,6 +713,9 @@ const CreateProduct = () => {
                             <label className="block pb-2 text-sm font-medium text-gray-700">
                                 Product Type
                             </label>
+                            {/* <p>Category: {category}</p>
+                            <p>Product Type: {productType}</p>
+                            <p>Options: {JSON.stringify(getProductTypes())}</p> */}
                             <select
                                 className="w-full border border-gray-300 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white disabled:bg-gray-100"
                                 value={productType}
@@ -971,7 +989,7 @@ const CreateProduct = () => {
                                 </button>
                             </div>
                         )}
-                        
+
                         {/* Image URL display for debugging */}
                         {uploadedImageUrl && (
                             <div className="mt-2 text-xs text-gray-500">
