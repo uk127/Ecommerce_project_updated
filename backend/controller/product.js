@@ -385,7 +385,21 @@ router.post(
   })
 );
 
-// Generate title and description using AI
+//Generate title and description using AI
+//currently using frontend -> node.js for imageupload
+router.post(
+  "/upload-image",
+  upload.single("image"),
+  catchAsyncErrors(async (req, res, next) => {
+    const cloudinaryResult = await uploadToCloudinary(req.file.buffer);
+
+    return res.status(200).json({
+      success: true,
+      imageUrl: cloudinaryResult.secure_url
+    });
+  })
+);
+
 router.post(
   "/generate-title-description",
   upload.single("image"),

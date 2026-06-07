@@ -375,7 +375,7 @@ const CreateProduct = () => {
         const formData = new FormData();
         formData.append("image", imageFile);
 
-        const response = await fetch(`${backend_url}api/v2/product/generate-title-description`, {
+        const response = await fetch(`${backend_url}api/v2/product/upload-image`, {
             method: "POST",
             body: formData,
         });
