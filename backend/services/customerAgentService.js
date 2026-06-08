@@ -1,19 +1,8 @@
 const { ChatOpenAI } = require("@langchain/openai");
-const { createToolCallingAgent, AgentExecutor } = require("langchain/agents");
-const { ChatPromptTemplate } = require("@langchain/core/prompts");
-const tools = require("./customerTools"); // 👈 separate tool file
+const { createReactAgent } = require("@langchain/langgraph/prebuilt");
+const tools = require("./customerTools");
 
-// -----------------------------
-// LLM (same as seller)
-// -----------------------------
-// const llm = new ChatOpenAI({
-//     model: "openai/gpt-4o-mini",
-//     temperature: 0,
-//     apiKey: process.env.OPENROUTER_API_KEY,
-//     configuration: {
-//         baseURL: "https://openrouter.ai/api/v1",
-//     },
-// });
+// Initialize LLM using your existing AI Credits wrapper credentials
 const llm = new ChatOpenAI({
     model: "openai/gpt-4o-mini",
     temperature: 0,
@@ -23,14 +12,8 @@ const llm = new ChatOpenAI({
     },
 });
 
-// -----------------------------
-// CUSTOMER PROMPT (IMPORTANT CHANGE)
-// -----------------------------
-const prompt = ChatPromptTemplate.fromMessages([
-    [
-        "system",
-        `
-You are a Customer Shopping Assistant AI.
+// System rules for the agent
+const systemInstructionString = `You are a Customer Shopping Assistant AI.
 
 RULES:
 - Only help with shopping related queries
@@ -49,16 +32,8 @@ RULES:
 - Always use tools when possible
 - Never hallucinate product data
 - If no result → say "No products found"
-- Be helpful and concise
-`,
-    ],
-    ["human", "{input}"],
-    ["placeholder", "{agent_scratchpad}"],
-]);
+- Be helpful and concise.`;
 
-// -----------------------------
-// CREATE AGENT
-// -----------------------------
 async function createCustomerAgent() {
     const toolList = [
         tools.get_payment_help_tool,
@@ -72,29 +47,23 @@ async function createCustomerAgent() {
         tools.filter_products_tool
     ];
 
-    const agent = await createToolCallingAgent({
+    // ✅ FIXED: Passing the pure string directly lets LangGraph handle state formatting natively
+    return createReactAgent({
         llm,
         tools: toolList,
-        prompt,
-    });
-
-    return new AgentExecutor({
-        agent,
-        tools: toolList,
-        verbose: true,
-        returnIntermediateSteps: true,
-        maxIterations: 5,
+        messageModifier: systemInstructionString, 
     });
 }
 
-// -----------------------------
-// EXECUTE (same pattern as seller)
-// -----------------------------
 async function executeCustomerAgent(message, userId, sessionId) {
     const agentExecutor = await createCustomerAgent();
 
     const result = await agentExecutor.invoke(
-        { input: message },
+        { 
+            messages: [
+                { role: "user", content: message }
+            ] 
+        },
         {
             configurable: {
                 userId,
@@ -103,25 +72,28 @@ async function executeCustomerAgent(message, userId, sessionId) {
         }
     );
 
-    // console.log("FULL RESULT:", JSON.stringify(result, null, 2));
+    const steps = result.messages;
+    
+    // Scan backwards to find if any tool execution captured data blocks
+    const aiMessagesWithTools = steps.filter(m => m.tool_calls && m.tool_calls.length > 0);
+    
+    if (aiMessagesWithTools.length > 0) {
+        const lastAiMessage = aiMessagesWithTools[aiMessagesWithTools.length - 1];
+        const lastToolCall = lastAiMessage.tool_calls[0];
+        
+        // Find the matching ToolMessage response document inside LangGraph's execution path
+        const toolOutputMessage = steps.find(m => m.tool_call_id === lastToolCall.id);
 
-    // ✅ TOOL OUTPUT EXISTS HERE
-    const steps = result.intermediateSteps;
-
-    if (steps && steps.length > 0) {
-        const lastStep = steps[steps.length - 1];
-
-        if (lastStep.observation) {
+        if (toolOutputMessage && toolOutputMessage.content) {
             try {
-                const toolResponse = JSON.parse(lastStep.observation);
-
-                console.log("TOOL RESPONSE:", toolResponse);
+                const toolResponse = JSON.parse(toolOutputMessage.content);
+                const finalResponse = steps[steps.length - 1].content;
 
                 return {
                     response: {
                         success: toolResponse.success ?? true,
-                        intent: toolResponse.intent || "CustomerQuery", // ✅ GET INTENT HERE
-                        message: result.output,
+                        intent: toolResponse.intent || "CustomerQuery", 
+                        message: finalResponse,
                         data: {
                             products: toolResponse.products || [],
                             ...toolResponse.data,
@@ -129,21 +101,23 @@ async function executeCustomerAgent(message, userId, sessionId) {
                     },
                 };
             } catch (err) {
-                console.error("Parse error:", err);
+                console.error("Tool parsing error on LangGraph stream:", err);
             }
         }
     }
 
-    // fallback (no tool used)
+    // Fallback if no specialized analytical database tool was invoked by the assistant graph
+    const finalOutput = steps[steps.length - 1].content;
     return {
         response: {
             success: true,
             intent: "CustomerQuery",
-            message: result.output,
+            message: finalOutput,
             data: null,
         },
     };
 }
+
 module.exports = {
     createCustomerAgent,
     executeCustomerAgent,

@@ -51,7 +51,14 @@ router.post(
         // Seller role: ONLY seller features allowed. Block ALL customer intents
         // result = await handleSellerQueries(message, sellerId);
         const agentResult = await executeSellerAgent(processedMessage, sellerId);
-        let finalMessage = agentResult.response || "";
+        // let finalMessage = agentResult.response || "";
+        // 🎯 FIX: Extract the text string from the nested response object
+        let finalMessage = agentResult.response?.message || "";
+
+        // Safety verification check to ensure text remains a primitive string
+        if (typeof finalMessage !== "string") {
+          finalMessage = JSON.stringify(finalMessage);
+        }
         // STEP: Generate audio ONLY for Tamil
         let audioBase64 = null;
 

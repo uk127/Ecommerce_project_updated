@@ -1,14 +1,9 @@
 const { ChatOpenAI } = require("@langchain/openai");
-const { createToolCallingAgent, AgentExecutor } = require("langchain/agents");
-const { ChatPromptTemplate } = require("@langchain/core/prompts");
-const adminTools = require("./adminTools"); // 👈 separate admin tools
+// 🚀 V1.X UPGRADE: Import the prebuilt agent factory directly from LangGraph
+const { createReactAgent } = require("@langchain/langgraph/prebuilt");
+const adminTools = require("./adminTools"); 
 
-// TO USE OPENROUTER CHANGE
-// apiKey: process.env.OPENROUTER_API_KEY,
-// baseURL: "https://openrouter.ai/api/v1"
-// -----------------------------
-// LLM (same config)
-// -----------------------------
+// Initialize LLM using your existing AI Credits wrapper credentials
 const llm = new ChatOpenAI({
     model: "openai/gpt-4o-mini",
     temperature: 0,
@@ -18,14 +13,8 @@ const llm = new ChatOpenAI({
     },
 });
 
-// -----------------------------
-// ADMIN PROMPT (IMPORTANT)
-// -----------------------------
-const prompt = ChatPromptTemplate.fromMessages([
-    [
-        "system",
-        `
-You are an Admin Dashboard AI.
+// 🚀 V1.X FIXED: Converted to a raw string to completely bypass prompt input validation errors
+const systemInstructionString = `You are an Admin Dashboard AI.
 
 ROLE:
 You help admin users manage and monitor the platform.
@@ -46,12 +35,7 @@ YOU MUST:
 RESTRICTIONS:
 - Do NOT answer customer shopping queries
 - Do NOT behave like a seller assistant
-- Only respond as an admin system assistant
-`,
-    ],
-    ["human", "{input}"],
-    ["placeholder", "{agent_scratchpad}"],
-]);
+- Only respond as an admin system assistant`;
 
 // -----------------------------
 // CREATE ADMIN AGENT
@@ -66,29 +50,27 @@ async function createAdminAgent() {
         adminTools.get_top_customers_tool
     ];
 
-    const agent = await createToolCallingAgent({
+    // ✅ FIXED: Passing the pure string directly lets LangGraph handle state formatting natively
+    return createReactAgent({
         llm,
         tools: toolList,
-        prompt,
-    });
-
-    return new AgentExecutor({
-        agent,
-        tools: toolList,
-        verbose: true,
-        returnIntermediateSteps: true,
-        maxIterations: 5,
+        messageModifier: systemInstructionString, 
     });
 }
 
 // -----------------------------
 // EXECUTE ADMIN AGENT
 // -----------------------------
-async function executeAdminAgent(message, adminId ) {
+async function executeAdminAgent(message, adminId) {
     const agentExecutor = await createAdminAgent();
 
+    // 🚀 V1.X UPGRADE: Format input into state messages expected by LangGraph graphs
     const result = await agentExecutor.invoke(
-        { input: message },
+        { 
+            messages: [
+                { role: "user", content: message }
+            ] 
+        },
         {
             configurable: {
                 adminId
@@ -96,14 +78,21 @@ async function executeAdminAgent(message, adminId ) {
         }
     );
 
-    const steps = result.intermediateSteps;
+    // 🚀 V1.X UPGRADE: Extract execution states backwards from the state history array
+    const steps = result.messages;
+    const aiMessagesWithTools = steps.filter(m => m.tool_calls && m.tool_calls.length > 0);
+    
+    if (aiMessagesWithTools.length > 0) {
+        const lastAiMessage = aiMessagesWithTools[aiMessagesWithTools.length - 1];
+        const lastToolCall = lastAiMessage.tool_calls[0];
+        
+        // Match the correct tool message ID with the execution response trace
+        const toolOutputMessage = steps.find(m => m.tool_call_id === lastToolCall.id);
 
-    if (steps && steps.length > 0) {
-        const lastStep = steps[steps.length - 1];
-
-        if (lastStep.observation) {
+        if (toolOutputMessage && toolOutputMessage.content) {
             try {
-                const toolResponse = JSON.parse(lastStep.observation);
+                const toolResponse = JSON.parse(toolOutputMessage.content);
+                const finalResponse = steps[steps.length - 1].content;
 
                 console.log("ADMIN TOOL RESPONSE:", toolResponse);
 
@@ -111,24 +100,25 @@ async function executeAdminAgent(message, adminId ) {
                     response: {
                         success: toolResponse.success ?? true,
                         intent: toolResponse.intent || "AdminQuery",
-                        message: result.output,
+                        message: finalResponse,
                         data: {
                             ...toolResponse.data,
                         },
                     },
                 };
             } catch (err) {
-                console.error("Parse error:", err);
+                console.error("Parse error on LangGraph admin message stream:", err);
             }
         }
     }
 
-    // fallback
+    // Fallback if no specific analytics tool was invoked by the model
+    const finalOutput = steps[steps.length - 1].content;
     return {
         response: {
             success: true,
             intent: "AdminQuery",
-            message: result.output,
+            message: finalOutput,
             data: null,
         },
     };
