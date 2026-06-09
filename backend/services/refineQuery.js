@@ -1,9 +1,9 @@
 import axios from "axios";
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const apiKey = process.env.AICREDITS_API_KEY;
 
 export async function refineQuery(message, mode = "toEnglish") {
-  if (!OPENROUTER_API_KEY) {
+  if (!apiKey) {
     throw new Error("OPENROUTER API key is not configured");
   }
 
@@ -39,10 +39,10 @@ Rules:
 - Return ONLY Tamil text.
 `;
   }
-
+  //https://openrouter.ai/api/v1/chat/completions
   try {
     const response = await axios.post(
-      "https://openrouter.ai/api/v1/chat/completions",
+      "https://api.aicredits.in/v1/chat/completions",
       {
         model: "openai/gpt-4o-mini",
         messages: [
@@ -53,9 +53,8 @@ Rules:
       },
       {
         headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "http://localhost:8001"
         }
       }
     );
