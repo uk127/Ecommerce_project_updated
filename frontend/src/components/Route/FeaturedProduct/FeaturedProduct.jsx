@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import styles from "../../../styles/styles";
 import ProductCard from "../ProductCard/ProductCard";
-
+import Ads from "../../Ads";
 const FeaturedProduct = () => {
   const { allProducts } = useSelector((state) => state.products);
 
@@ -16,7 +16,13 @@ const FeaturedProduct = () => {
           {allProducts && allProducts.length !== 0 && (
             <>
               {allProducts.map((i, index) => (
-                <ProductCard data={i} key={index} />
+                <React.Fragment key={index}>
+                  <ProductCard data={i} key={index} />
+
+                  {(index + 1) % 5 === 0 && (
+                    <Ads key={`ad-${index}`} />
+                  )}
+                </React.Fragment>
               ))}
             </>
           )}
